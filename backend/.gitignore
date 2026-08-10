@@ -1,0 +1,26 @@
+# Python Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments & Secrets
+.env*
+.venv
+venv/
+ENV/
+env/
+
+# TLS Certificates & Private Keys
+*.pem
+*.key
+*.crt
+
+# SQLite Databases & Uploaded Storage
+*.db
+storage/uploads/
+storage/user_*
+
+# Pytest / Testing
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.gitignore
+backend
+out
+build
+*.md
+.gemini

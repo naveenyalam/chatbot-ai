@@ -1,0 +1,23 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/Scripts/python.exe",
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend"
+  ],
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.exclude": [
+    "**/__pyrefly_virtual__/**",
+    "**/inmemory/**",
+    "**/venv/**",
+    "**/node_modules/**"
+  ],
+  "files.exclude": {
+    "**/__pyrefly_virtual__": true,
+    "**/_inmemory": true
+  },
+  "files.watcherExclude": {
+    "**/__pyrefly_virtual__/**": true,
+    "**/_inmemory/**": true
+  },
+  "css.lint.unknownAtRules": "ignore"
+}

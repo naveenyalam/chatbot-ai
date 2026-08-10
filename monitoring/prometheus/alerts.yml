@@ -1,0 +1,74 @@
+groups:
+  - name: nova_ai_production_alerts
+    rules:
+      - alert: HighAPIErrorRate
+        expr: sum(rate(nova_http_requests_total{status_code=~"5.."}[5m])) / sum(rate(nova_http_requests_total[5m])) * 100 > 5
+        for: 2m
+        labels:
+          severity: CRITICAL
+        annotations:
+          summary: "High HTTP 5xx error rate detected (> 5%)"
+          description: "HTTP 5xx error rate has exceeded 5% over the past 5 minutes."
+
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, sum(rate(nova_http_request_duration_seconds_bucket[5m])) by (le)) > 1.0
+        for: 5m
+        labels:
+          severity: WARNING
+        annotations:
+          summary: "API P95 latency degradation (> 1.0s)"
+          description: "P95 request latency has exceeded 1.0 second over the last 5 minutes."
+
+      - alert: DBPoolExhaustion
+        expr: nova_db_pool_utilization_ratio > 0.85
+        for: 2m
+        labels:
+          severity: CRITICAL
+        annotations:
+          summary: "PostgreSQL connection pool near saturation (> 85%)"
+          description: "Database connection pool utilization is above 85%."
+
+      - alert: RedisUnavailable
+        expr: sum(rate(nova_redis_operations_total{status="error"}[5m])) > 5
+        for: 2m
+        labels:
+          severity: WARNING
+        annotations:
+          summary: "Redis operations failing"
+          description: "Multiple Redis command errors detected. In-memory cache fallback active."
+
+      - alert: LLMProviderFailureSpike
+        expr: sum(rate(nova_llm_provider_errors_total[5m])) > 0.2
+        for: 3m
+        labels:
+          severity: CRITICAL
+        annotations:
+          summary: "LLM Provider failure rate spike"
+          description: "Primary LLM provider is returning HTTP errors. Failover provider engaged."
+
+      - alert: CircuitBreakerOpen
+        expr: nova_circuit_breaker_state == 2
+        for: 1m
+        labels:
+          severity: CRITICAL
+        annotations:
+          summary: "LLM Circuit Breaker is OPEN"
+          description: "Circuit breaker for primary AI provider has tripped to OPEN due to repeated errors."
+
+      - alert: ExcessiveLLMCost
+        expr: rate(nova_llm_estimated_cost_dollars_total[1h]) * 3600 > 50.0
+        for: 5m
+        labels:
+          severity: WARNING
+        annotations:
+          summary: "High LLM API cost rate (> $50/hour)"
+          description: "LLM token expenditure rate has exceeded $50/hour."
+
+      - alert: SecurityViolationSpike
+        expr: sum(rate(nova_security_violations_total[5m])) > 0.1
+        for: 1m
+        labels:
+          severity: CRITICAL
+        annotations:
+          summary: "Security anomaly violation spike"
+          description: "Multiple rate-limit violations, prompt injections, or unauthorized attempts detected."

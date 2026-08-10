@@ -1,0 +1,256 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-ring: var(--ring);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --animate-float: float 8s ease-in-out infinite;
+  --animate-float-slow: float-slow 12s ease-in-out infinite;
+  --animate-spin-slow: spin 30s linear infinite;
+  --animate-spin-reverse: spin-reverse 25s linear infinite;
+  --animate-pulse-slow: pulse-slow 5s ease-in-out infinite;
+  --animate-glow: glow 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.01);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(8px) rotate(180deg);
+  }
+}
+
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 25px rgba(99, 102, 241, 0.15)) drop-shadow(0 0 50px rgba(6, 182, 212, 0.1));
+  }
+  50% {
+    filter: drop-shadow(0 0 35px rgba(139, 92, 246, 0.3)) drop-shadow(0 0 70px rgba(236, 72, 153, 0.2));
+  }
+}
+
+:root {
+  --background: #070a12;
+  --foreground: #f9fafb;
+  --surface: #111827;
+  --surface-primary: #111827;
+  --surface-secondary: #1a2233;
+  --surface-elevated: #151b28;
+  --surface-hover: #1f293d;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text-primary: #f9fafb;
+  --text-muted: #9ca3af;
+  --muted: #4b5563;
+  --muted-foreground: #9ca3af;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --ring: rgba(99, 102, 241, 0.3);
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+}
+
+.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-primary: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --surface-elevated: #ffffff;
+  --surface-hover: #e2e8f0;
+  --border: rgba(15, 23, 42, 0.1);
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.18);
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --muted: #94a3b8;
+  --muted-foreground: #64748b;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --ring: rgba(99, 102, 241, 0.2);
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+}
+
+.dark {
+  --background: #070a12;
+  --foreground: #f9fafb;
+  --surface: #111827;
+  --surface-primary: #111827;
+  --surface-secondary: #1a2233;
+  --surface-elevated: #151b28;
+  --surface-hover: #1f293d;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text-primary: #f9fafb;
+  --text-muted: #9ca3af;
+  --muted: #4b5563;
+  --muted-foreground: #9ca3af;
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --ring: rgba(99, 102, 241, 0.3);
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom Scrollbar Styles for Webkit */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: var(--surface-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.15);
+}
+
+/* Glowing Border Accent */
+.glow-border {
+  position: relative;
+}
+.glow-border::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4);
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.glow-border:hover::after {
+  opacity: 1;
+}
+
+/* Custom styles for animations and reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-delay: 0s !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .animate-float,
+  .animate-float-slow,
+  .animate-spin-slow,
+  .animate-spin-reverse,
+  .animate-pulse-slow,
+  .animate-glow {
+    animation: none !important;
+    transform: none !important;
+  }
+}

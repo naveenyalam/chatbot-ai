@@ -1,0 +1,18 @@
+# Pyrefly Configuration for NOVA AI Workspace
+# Defines the package layout and sets boundaries to exclude transient files
+
+python-interpreter-path = "backend/venv/Scripts/python.exe"
+
+project-includes = [
+    "backend/app"
+]
+
+project-excludes = [
+    "**/__pyrefly_virtual__/**",
+    "**/inmemory/**",
+    "**/venv/**",
+    "**/node_modules/**",
+    "**/.next/**"
+]
+
+use-ignore-files = true
