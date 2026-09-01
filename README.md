@@ -20,13 +20,14 @@
 
 ---
 
-## 🚀 Live Demo & Deployment Target
+## 🚀 Deployment & Live App Setup
 
-- **Target Frontend URL**: [https://chatbot-ai.vercel.app](https://chatbot-ai.vercel.app)
-- **Target Backend API**: [https://nova-ai-backend.onrender.com](https://nova-ai-backend.onrender.com)
-- **Target Health Endpoint**: [https://nova-ai-backend.onrender.com/health](https://nova-ai-backend.onrender.com/health)
+- **GitHub Repository**: [https://github.com/naveenyalam/chatbot-ai](https://github.com/naveenyalam/chatbot-ai)
+- **Target Frontend URL (Vercel)**: `https://<your-project-name>.vercel.app`
+- **Target Backend URL (Render)**: `https://<your-project-name>.onrender.com`
 
-> **Deployment Note**: NOVA AI is engineered as a production-oriented full-stack AI application featuring a Next.js 16 frontend, FastAPI backend, managed PostgreSQL, Upstash Redis infrastructure, real-time SSE streaming, and intent-driven AI image generation.
+> **Note on Live URL**: `chatbot-ai.vercel.app` is currently registered to a separate third-party Vercel project. When you import `https://github.com/naveenyalam/chatbot-ai` into your Vercel account, Vercel generates your own unique public production URL (e.g. `nova-ai-chat.vercel.app`).
+
 
 ### 🧪 Try These Prompts
 
