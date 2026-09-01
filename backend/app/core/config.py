@@ -62,10 +62,14 @@ class Settings(BaseModel):
     IMAGE_GENERATION_MAX_PROMPT_LENGTH: int = int(os.getenv("IMAGE_GENERATION_MAX_PROMPT_LENGTH", "1000"))
     IMAGE_STORAGE_PROVIDER: str = os.getenv("IMAGE_STORAGE_PROVIDER", "url")
 
-    # Model Routing — Phase 7
+    # Model Routing Strategy
     AI_FAST_MODEL: str = os.getenv("AI_FAST_MODEL", "gpt-4o-mini")
+    FAST_CHAT_MODEL: str = os.getenv("FAST_CHAT_MODEL", os.getenv("AI_FAST_MODEL", "gpt-4o-mini"))
+    QUALITY_CHAT_MODEL: str = os.getenv("QUALITY_CHAT_MODEL", os.getenv("AI_MODEL", "gpt-4o-mini"))
     AI_REASONING_MODEL: str = os.getenv("AI_REASONING_MODEL", "gpt-4o-mini")
     EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    CHAT_HISTORY_LIMIT: int = int(os.getenv("CHAT_HISTORY_LIMIT", "10"))
+    MAX_CONTEXT_CHARS: int = int(os.getenv("MAX_CONTEXT_CHARS", "16000"))
 
     # Agent Limits — Phase 7
     AGENT_MAX_STEPS: int = int(os.getenv("AGENT_MAX_STEPS", "8"))

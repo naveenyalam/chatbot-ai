@@ -81,10 +81,11 @@ async def stream_chat(
     ai_history = truncate_context_messages(ai_history, max_chars=settings.MAX_TOKENS_PER_REQUEST * 4)
     t_prompt_ms = (time.perf_counter() - t_prompt0) * 1000
 
+    t_auth_ms = (t_redis0 - t_req_start) * 1000
     t_pre_llm_ms = (time.perf_counter() - t_req_start) * 1000
     logger.info(
-        f"[PERF] request_id={request_id} redis_ms={t_redis_ms:.2f} "
-        f"database_ms={t_db_ms:.2f} prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f}"
+        f"[PERF] request_id={request_id} auth_ms={t_auth_ms:.2f} redis_ms={t_redis_ms:.2f} "
+        f"database_ms={t_db_ms:.2f} context_ms={t_prompt_ms:.2f} rag_ms=0.00 prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f}"
     )
 
     async def event_generator():

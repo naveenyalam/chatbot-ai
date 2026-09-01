@@ -12,9 +12,10 @@ from app.services.llm_provider import OpenAICompatibleProvider, NotConfiguredPro
 logger = logging.getLogger("nova-ai.model-router")
 
 _PURPOSE_MAP = {
-    "fast":      lambda: settings.AI_FAST_MODEL,
-    "reasoning": lambda: settings.AI_REASONING_MODEL,
-    "vision":    lambda: settings.VISION_MODEL,
+    "fast":      lambda: settings.FAST_CHAT_MODEL or settings.AI_FAST_MODEL or settings.AI_MODEL,
+    "quality":   lambda: settings.QUALITY_CHAT_MODEL or settings.AI_MODEL,
+    "reasoning": lambda: settings.AI_REASONING_MODEL or settings.QUALITY_CHAT_MODEL or settings.AI_MODEL,
+    "vision":    lambda: settings.VISION_MODEL or settings.AI_MODEL,
     "default":   lambda: settings.AI_MODEL,
 }
 

@@ -60,12 +60,21 @@ def decode_access_token(token: str) -> dict | None:
         logger.warning(f"JWT token decoding failed: {exc}")
         return None
 
+import time
+_user_cache: dict[str, tuple[User, float]] = {}
+_USER_CACHE_TTL_SECONDS = 60.0
+
+def invalidate_user_cache(user_id: str):
+    """Invalidates cached user state when account properties are mutated."""
+    _user_cache.pop(user_id, None)
+
 async def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ) -> User:
     """
     FastAPI dependency that extracts the user context from request cookies or Authorization headers.
+    Uses sub-millisecond in-memory TTL caching to avoid redundant DB roundtrips.
     """
     # 1. Read token from cookie
     token = request.cookies.get("access_token")
@@ -91,11 +100,21 @@ async def get_current_user(
         )
 
     user_id = payload["sub"]
+    now = time.time()
+    if user_id in _user_cache:
+        cached_user, cached_at = _user_cache[user_id]
+        if now - cached_at < _USER_CACHE_TTL_SECONDS:
+            try:
+                return db.merge(cached_user, load=False)
+            except Exception:
+                _user_cache.pop(user_id, None)
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account no longer exists."
         )
-        
+
+    _user_cache[user_id] = (user, now)
     return user

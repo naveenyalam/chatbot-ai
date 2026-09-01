@@ -37,6 +37,10 @@ async def lifespan(app: FastAPI):
     else:
         logger.warning("Redis unavailable")
 
+    # Warmup persistent LLM connection pool
+    from app.services.llm_provider import warmup_llm_client
+    await warmup_llm_client()
+
     # Start background job worker
     from app.core.jobs import run_worker_in_background, stop_worker, register_job_handler
     

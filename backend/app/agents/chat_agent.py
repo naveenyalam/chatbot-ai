@@ -33,8 +33,13 @@ class ChatAgent(BaseAgent):
 
         user_msg = state.messages[-1]["content"] if state.messages else ""
 
-        # Light heuristic: only call planner if message looks mathematical
-        has_math = any(op in user_msg for op in ["+", "-", "*", "/", "%", "^", "**", "sqrt", "calculate", "compute"])
+        import re
+        from app.core.config import settings
+        # Strict deterministic check for explicit math calculation requests
+        has_math = bool(
+            re.search(r'\b(calculate|compute|solve|sqrt|factorial)\b', user_msg, re.IGNORECASE) or
+            re.search(r'\d+\s*[\+\-\*\/\%\^]\s*\d+', user_msg)
+        )
         allowed = self.get_allowed_tools()
 
         if has_math and allowed:
@@ -77,10 +82,11 @@ class ChatAgent(BaseAgent):
         if style_instructions:
             system_prompt += f"\n\n### RESPONSE STYLE & TONE GUIDELINES{style_instructions}"
 
+        bounded_messages = state.messages[-settings.CHAT_HISTORY_LIMIT:] if len(state.messages) > settings.CHAT_HISTORY_LIMIT else state.messages
         formatted_messages = []
-        for i, msg in enumerate(state.messages):
+        for i, msg in enumerate(bounded_messages):
             m = dict(msg)
-            if i == len(state.messages) - 1 and state.language:
+            if i == len(bounded_messages) - 1 and state.language:
                 lang_clean = state.language.strip().lower()
                 if lang_clean not in ("auto", "auto detect", ""):
                     lang_map = {

@@ -29,9 +29,23 @@ def get_shared_llm_client() -> httpx.AsyncClient:
     global _shared_llm_client
     if _shared_llm_client is None or _shared_llm_client.is_closed:
         timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=15.0)
-        limits = httpx.Limits(max_keepalive_connections=30, max_connections=50, keepalive_expiry=120.0)
-        _shared_llm_client = httpx.AsyncClient(timeout=timeout, limits=limits)
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=100, keepalive_expiry=300.0)
+        try:
+            _shared_llm_client = httpx.AsyncClient(timeout=timeout, limits=limits, http2=True)
+        except ImportError:
+            _shared_llm_client = httpx.AsyncClient(timeout=timeout, limits=limits)
     return _shared_llm_client
+
+async def warmup_llm_client():
+    """Warm up persistent HTTP client connection pool during application startup."""
+    try:
+        client = get_shared_llm_client()
+        if settings.ai_is_real and settings.AI_BASE_URL:
+            base_target = settings.AI_BASE_URL.rstrip("/")
+            await client.options(base_target, timeout=3.0)
+            logger.info("[LLM Provider] Connection pool warmup complete.")
+    except Exception as exc:
+        logger.debug(f"[LLM Provider] Warmup ping note: {exc}")
 
 class OpenAICompatibleProvider(BaseLLMProvider):
     def __init__(self, api_key: str, base_url: str):
