@@ -83,9 +83,11 @@ async def stream_chat(
 
     t_auth_ms = (t_redis0 - t_req_start) * 1000
     t_pre_llm_ms = (time.perf_counter() - t_req_start) * 1000
+    t_llm_request_started_ms = t_pre_llm_ms
     logger.info(
-        f"[PERF] request_id={request_id} auth_ms={t_auth_ms:.2f} redis_ms={t_redis_ms:.2f} "
-        f"database_ms={t_db_ms:.2f} context_ms={t_prompt_ms:.2f} rag_ms=0.00 prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f}"
+        f"[PERF] request_id={request_id} request_received_ms=0.00 auth_ms={t_auth_ms:.2f} redis_ms={t_redis_ms:.2f} "
+        f"database_ms={t_db_ms:.2f} context_ms={t_prompt_ms:.2f} router_ms=0.00 planner_ms=0.00 prompt_ms={t_prompt_ms:.2f} "
+        f"pre_llm_ms={t_pre_llm_ms:.2f} llm_request_started_ms={t_llm_request_started_ms:.2f}"
     )
 
     async def event_generator():
@@ -93,6 +95,7 @@ async def stream_chat(
         text_tokens = []
         web_citations = []
         first_token_time = None
+        warning_emitted = False
         t_sse_start = time.perf_counter()
         sse_connection_ms = (t_sse_start - t_req_start) * 1000
 
@@ -104,7 +107,7 @@ async def stream_chat(
             yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv_id})}\n\n"
 
             # Yield complete latency breakdown metadata for production observability
-            yield f"data: {json.dumps({'type': 'latency_breakdown', 'auth_ms': round(t_auth_ms, 2), 'redis_ms': round(t_redis_ms, 2), 'database_ms': round(t_db_ms, 2), 'context_ms': round(t_prompt_ms, 2), 'rag_ms': 0.0, 'planner_ms': 0.0, 'router_ms': 0.0, 'prompt_ms': round(t_prompt_ms, 2), 'pre_llm_ms': round(t_pre_llm_ms, 2), 'sse_connection_ms': round(sse_connection_ms, 2)})}\n\n"
+            yield f"data: {json.dumps({'type': 'latency_breakdown', 'request_received_ms': 0.0, 'auth_ms': round(t_auth_ms, 2), 'redis_ms': round(t_redis_ms, 2), 'database_ms': round(t_db_ms, 2), 'context_ms': round(t_prompt_ms, 2), 'router_ms': 0.0, 'planner_ms': 0.0, 'prompt_ms': round(t_prompt_ms, 2), 'pre_llm_ms': round(t_pre_llm_ms, 2), 'llm_request_started_ms': round(t_llm_request_started_ms, 2), 'sse_connection_ms': round(sse_connection_ms, 2)})}\n\n"
 
             t_sse_first_event_ms = (time.perf_counter() - t_req_start) * 1000
             logger.info(f"[PERF] request_id={request_id} sse_first_event_ms={t_sse_first_event_ms:.2f}")
@@ -134,7 +137,7 @@ async def stream_chat(
                 from app.services.workspace_service import workspace_service
 
                 resolved_mode = chat_req.workspace_mode or chat_req.mode or "general"
-                async for event in workspace_service.execute_workspace_chat(
+                stream_gen = workspace_service.execute_workspace_chat(
                     request_id=request_id,
                     user_id=current_user.id,
                     conversation_id=conv_id,
@@ -150,20 +153,46 @@ async def stream_chat(
                     semantic_chunk_limit=chat_req.semantic_chunk_limit,
                     similarity_filtering=chat_req.similarity_filtering,
                     language=chat_req.language
-                ):
+                )
+                stream_iter = stream_gen.__aiter__()
+
+                while True:
                     if await request.is_disconnected():
                         logger.warning(f"[{request_id}] Client disconnected — stopping stream.")
                         break
 
-                    if event.get("type") == "text":
+                    now = time.perf_counter()
+                    elapsed = now - t_req_start
+
+                    # Phase 9: Failure safety check before LLM first content token
+                    if first_token_time is None:
+                        if elapsed >= 10.0:
+                            logger.error(f"[{request_id}] Hard timeout: LLM first token exceeded 10s ({elapsed:.2f}s). Emitting clean failure event.")
+                            yield f"data: {json.dumps({'type': 'error', 'code': 'FIRST_TOKEN_TIMEOUT', 'value': 'Request timed out waiting for AI model response (10s threshold). Please try again.'})}\n\n"
+                            break
+                        elif elapsed >= 8.0 and not warning_emitted:
+                            warning_emitted = True
+                            logger.warning(f"[{request_id}] Soft warning: LLM first token delayed past 8s ({elapsed:.2f}s). Emitting latency warning event.")
+                            yield f"data: {json.dumps({'type': 'status', 'value': 'AI model is taking longer than expected to start streaming...'})}\n\n"
+
+                    timeout_val = 0.5 if first_token_time is None else 60.0
+
+                    try:
+                        event = await asyncio.wait_for(stream_iter.__anext__(), timeout=timeout_val)
+                    except StopAsyncIteration:
+                        break
+                    except asyncio.TimeoutError:
+                        continue
+
+                    if event.get("type") == "text" and event.get("value"):
                         if first_token_time is None:
                             first_token_time = time.perf_counter()
                             ft_ms = (first_token_time - t_req_start) * 1000
                             logger.info(
-                                f"[PERF] request_id={request_id} auth_ms={t_auth_ms:.2f} redis_ms={t_redis_ms:.2f} "
-                                f"database_ms={t_db_ms:.2f} context_ms={t_prompt_ms:.2f} rag_ms=0.00 planner_ms=0.00 "
-                                f"router_ms=0.00 prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f} "
-                                f"sse_connection_ms={sse_connection_ms:.2f} llm_first_token_ms={ft_ms:.2f}"
+                                f"[PERF] request_id={request_id} request_received_ms=0.00 auth_ms={t_auth_ms:.2f} redis_ms={t_redis_ms:.2f} "
+                                f"database_ms={t_db_ms:.2f} context_ms={t_prompt_ms:.2f} router_ms=0.00 planner_ms=0.00 "
+                                f"prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f} llm_request_started_ms={t_llm_request_started_ms:.2f} "
+                                f"sse_connection_ms={sse_connection_ms:.2f} llm_first_token_ms={ft_ms:.2f} sse_first_content_token_ms={ft_ms:.2f}"
                             )
                             if ft_ms > settings.MAX_FIRST_TOKEN_LATENCY_SECONDS * 1000:
                                 logger.warning(
