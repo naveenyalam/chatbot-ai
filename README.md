@@ -1,8 +1,13 @@
+<div align="center">
+
 # 🚀 NOVA AI
 
-> Full-Stack AI Chatbot with Real-Time Streaming & AI Image Generation
+> **Full-Stack AI Chatbot with Real-Time Streaming & AI Image Generation**
 
-<div align="center">
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-https%3A%2F%2Fchatbot--ai.vercel.app-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://chatbot-ai.vercel.app)
+[![GitHub Repository](https://img.shields.io/badge/📦_GitHub_Repo-naveenyalam%2Fchatbot--ai-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/naveenyalam/chatbot-ai)
+
+<br/>
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/naveenyalam/chatbot-ai)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -11,9 +16,8 @@
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-black)](https://vercel.com)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7)](https://render.com)
 
-[🚀 DEMO — TARGET DEPLOYMENT URL](https://chatbot-ai.vercel.app) &nbsp; | &nbsp; [📦 GitHub Repository](https://github.com/naveenyalam/chatbot-ai)
-
 </div>
+
 
 ---
 
