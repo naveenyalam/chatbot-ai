@@ -27,15 +27,23 @@ export default function LoginPage() {
   const [infoNotice, setInfoNotice] = useState<string | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
-  // Check if session is already active
+  // Check if session is already active (with 3.5s timeout for fast initial page load)
   useEffect(() => {
+    const checkTimer = setTimeout(() => {
+      setIsCheckingSession(false);
+    }, 3500);
+
     getMe()
       .then(() => {
+        clearTimeout(checkTimer);
         router.push("/");
       })
       .catch(() => {
+        clearTimeout(checkTimer);
         setIsCheckingSession(false);
       });
+
+    return () => clearTimeout(checkTimer);
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -83,8 +83,16 @@ export default function Home() {
     if (sessionCheckInFlightRef.current && !force) return;
     sessionCheckInFlightRef.current = true;
     setAuthError(null);
+
+    const checkWithTimeout = Promise.race([
+      getMe(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Session check timeout")), 3500)
+      ),
+    ]);
+
     try {
-      const dbUser = await getMe();
+      const dbUser = (await checkWithTimeout) as any;
       setUser({
         name: dbUser.name,
         email: dbUser.email,
@@ -97,6 +105,9 @@ export default function Home() {
       setIsCheckingAuth(false);
       if (isNetworkError) {
         setAuthError("Unable to connect to NOVA. Check that the NOVA backend is running.");
+      } else if (err.message === "Session check timeout") {
+        // Render backend is cold-starting or session not active; gracefully unblock UI
+        setUser(null);
       } else {
         setUser(null);
         if (!hasHandledSessionExpiryRef.current) {
