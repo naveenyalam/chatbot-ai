@@ -1,7 +1,10 @@
 import { handleNetworkError } from "./error";
 
-// Base API configuration parameters and centralized HTTP client helpers
-export const API_URL = process.env.NEXT_PUBLIC_API_URL !== undefined ? process.env.NEXT_PUBLIC_API_URL : "http://localhost:8000";
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL !== undefined && process.env.NEXT_PUBLIC_API_URL !== ""
+  ? process.env.NEXT_PUBLIC_API_URL
+  : "http://localhost:8000";
+export const API_URL = rawApiUrl.endsWith("/") ? rawApiUrl.slice(0, -1) : rawApiUrl;
+
 
 let isSessionExpiredNotified = false;
 const sessionExpiredListeners: Array<() => void> = [];

@@ -94,6 +94,7 @@ export default function Home() {
       setIsCheckingAuth(false);
     } catch (err: any) {
       const isNetworkError = err.message === "Failed to fetch" || err.message?.includes("NetworkError") || err.message?.includes("Failed to connect");
+      setIsCheckingAuth(false);
       if (isNetworkError) {
         setAuthError("Unable to connect to NOVA. Check that the NOVA backend is running.");
       } else {
