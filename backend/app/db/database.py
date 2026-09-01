@@ -33,13 +33,24 @@ def get_db():
         db.close()
 
 
+_migrations_applied = False
+
 def ensure_db_migrations():
     """Safely apply schema additions (like workspace_mode column) to existing SQLite/DB tables."""
-    from sqlalchemy import text
+    global _migrations_applied
+    if _migrations_applied:
+        return
+    _migrations_applied = True
+
+    from sqlalchemy import inspect, text
     try:
-        with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE conversations ADD COLUMN workspace_mode VARCHAR(50) DEFAULT 'general'"))
-            conn.commit()
+        inspector = inspect(engine)
+        if "conversations" in inspector.get_table_names():
+            columns = [c["name"] for c in inspector.get_columns("conversations")]
+            if "workspace_mode" not in columns:
+                with engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE conversations ADD COLUMN workspace_mode VARCHAR(50) DEFAULT 'general'"))
+                    conn.commit()
     except Exception:
         pass
 
