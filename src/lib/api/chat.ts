@@ -156,6 +156,10 @@ export function streamChatResponse(
                   options.onAgentComplete?.(event.tool_activity);
                 } else if (event.type === "sources") {
                   options.onSources?.(event.value as unknown[]);
+                } else if (event.type === "image") {
+                  const markdownImg = (event.value as string) || `![AI Image: ${(event.prompt as string) || "Generated Image"}](${(event.image_url as string) || ""})`;
+                  fullText += markdownImg;
+                  options.onChunk(fullText);
                 } else if (event.type === "text") {
                   fullText += event.value as string;
                   options.onChunk(fullText);

@@ -67,3 +67,44 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}): Pro
     throw new Error(normalized.message);
   }
 }
+
+/**
+ * Generate an AI image via POST /api/images/generate
+ */
+export async function generateImage(prompt: string, size: string = "1024x1024") {
+  const response = await fetchApi("/api/images/generate", {
+    method: "POST",
+    body: JSON.stringify({ prompt, size }),
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || "Failed to generate image.");
+  }
+
+  return response.json();
+}
+
+/**
+ * Trigger secure image download via proxy endpoint or browser blob download.
+ */
+export async function downloadImage(imageUrl: string, filename: string = "nova_ai_image.png") {
+  try {
+    const proxyUrl = `${API_URL}/api/images/proxy-download?image_url=${encodeURIComponent(imageUrl)}&filename=${encodeURIComponent(filename)}`;
+    const resp = await fetch(proxyUrl, { credentials: "include" });
+    if (!resp.ok) throw new Error("Proxy download failed");
+
+    const blob = await resp.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.warn("Proxy download failed, falling back to direct window open:", err);
+    window.open(imageUrl, "_blank");
+  }
+}

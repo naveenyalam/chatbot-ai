@@ -17,6 +17,7 @@ import {
   BarChart2,
   PenTool,
   Square,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Attachment, WorkspaceView } from "@/types";
@@ -25,7 +26,7 @@ import { uploadDocument, DocumentResponse } from "@/lib/api/documents";
 import { useApp } from "@/components/providers/ThemeProvider";
 import { useToast } from "@/components/ui/Toast";
 
-export type ToolType = "search" | "research" | "document" | "image" | "task";
+export type ToolType = "search" | "research" | "document" | "image" | "task" | "image_gen";
 
 interface ChatInputProps {
   value: string;
@@ -244,6 +245,7 @@ export function ChatInput({
     { id: "document", name: "Document Search", desc: "Search uploaded files/RAG database", icon: FileText },
     { id: "image", name: "Image Analysis", desc: "Analyze visual elements and charts", icon: ImageIcon },
     { id: "task", name: "Autonomous Agent", desc: "Executes code, math & advanced tools autonomously", icon: Terminal },
+    { id: "image_gen", name: "AI Image Generator", desc: "Generate AI images from text prompts (DALL-E 3)", icon: Sparkles },
   ] as const;
 
   const ActiveToolIcon = selectedTool ? tools.find(t => t.id === selectedTool)?.icon : null;

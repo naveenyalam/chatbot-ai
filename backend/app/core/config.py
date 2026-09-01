@@ -52,6 +52,16 @@ class Settings(BaseModel):
     VISION_MODEL: str = os.getenv("VISION_MODEL", "gpt-4o-mini")
     VISION_MAX_IMAGE_SIZE_MB: int = int(os.getenv("VISION_MAX_IMAGE_SIZE_MB", "10"))
 
+    # AI Image Generation Settings
+    IMAGE_GENERATION_ENABLED: bool = os.getenv("IMAGE_GENERATION_ENABLED", "true").lower() == "true"
+    IMAGE_PROVIDER: str = os.getenv("IMAGE_PROVIDER", "openai").lower()
+    IMAGE_MODEL: str = os.getenv("IMAGE_MODEL", "dall-e-3")
+    IMAGE_API_KEY: str = os.getenv("IMAGE_API_KEY", "")
+    IMAGE_SIZE: str = os.getenv("IMAGE_SIZE", "1024x1024")
+    IMAGE_GENERATION_RATE_LIMIT: int = int(os.getenv("IMAGE_GENERATION_RATE_LIMIT", "10"))
+    IMAGE_GENERATION_MAX_PROMPT_LENGTH: int = int(os.getenv("IMAGE_GENERATION_MAX_PROMPT_LENGTH", "1000"))
+    IMAGE_STORAGE_PROVIDER: str = os.getenv("IMAGE_STORAGE_PROVIDER", "url")
+
     # Model Routing — Phase 7
     AI_FAST_MODEL: str = os.getenv("AI_FAST_MODEL", "gpt-4o-mini")
     AI_REASONING_MODEL: str = os.getenv("AI_REASONING_MODEL", "gpt-4o-mini")
@@ -109,42 +119,34 @@ class Settings(BaseModel):
         """True only when a valid non-placeholder API key is configured AND mock is not forced."""
         if self.AI_USE_MOCK:
             return False
-            
-        if self.LLM_PROVIDER == "ollama":
-            return True
 
         api_key = self.CLOUD_LLM_API_KEY or self.AI_API_KEY
         if not api_key:
             return False
-            
+
         key_lower = api_key.lower().strip()
-        
-        # Explicitly accept "ollama"
-        if key_lower == "ollama":
-            return True
-            
-        # Blacklist of specific placeholders and pattern matching
-        placeholder_substrings = ("mock", "dummy", "fake", "placeholder", "test", "local")
+
+        placeholder_substrings = ("mock", "dummy", "fake", "placeholder", "test")
         placeholder_keys = (
             "", "your_llm_api_key_here", "dummy-local-key", "local-mock-key",
             "dev-openai-token", "test-key", "fake-key", "mock-key", "placeholder", None
         )
-        
+
+        if key_lower in placeholder_keys or any(sub in key_lower for sub in placeholder_substrings):
+            return False
+
+        if self.LLM_PROVIDER == "ollama":
+            return True
+
+        if key_lower == "ollama":
+            return True
+
         # If it's a local Ollama base URL, we permit keys containing "local" but not "mock"/"dummy"/"fake"/"placeholder"
         if self.AI_BASE_URL and ("127.0.0.1:11434" in self.AI_BASE_URL or "localhost:11434" in self.AI_BASE_URL):
-            if key_lower in placeholder_keys:
-                return False
-            if any(sub in key_lower for sub in ("mock", "dummy", "fake", "placeholder", "test")):
-                return False
             return True
-            
-        if key_lower in placeholder_keys:
-            return False
-            
-        if any(sub in key_lower for sub in placeholder_substrings):
-            return False
-            
+
         return True
+
 
     @property
     def RAG_RELEVANCE_THRESHOLD(self) -> float:

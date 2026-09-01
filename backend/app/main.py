@@ -12,7 +12,7 @@ from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 from app.db.database import get_db
 from app.core.config import settings
-from app.api.routes import chat, auth, conversations, documents, workspace
+from app.api.routes import chat, auth, conversations, documents, workspace, images
 from app.middleware.security import SecurityHeadersMiddleware, RequestSizeLimiterMiddleware
 from app.core.logging_config import request_id_ctx
 
@@ -288,6 +288,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(conversations.router, prefix="/api/conversations", tags=["Conversations"])
 app.include_router(documents.router, prefix="/api", tags=["Documents"])
 app.include_router(workspace.router, prefix="/api", tags=["Workspace"])
+app.include_router(images.router, prefix="/api", tags=["Image Generation"])
 from app.workspaces import workspace_router
 app.include_router(workspace_router, prefix="/api", tags=["Workspaces Engine"])
 

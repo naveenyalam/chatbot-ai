@@ -35,6 +35,9 @@ export interface Message {
   timestamp: string; // ISO string
   status?: MessageStatus;
   isStreaming?: boolean;
+  messageType?: "text" | "image" | "error";
+  imageUrl?: string;
+  imagePrompt?: string;
   attachments?: Attachment[];
   sources?: CitationSource[];
   statusMessage?: string;

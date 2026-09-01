@@ -134,26 +134,48 @@ async def workspace_chat_stream(
             yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv.id})}\n\n"
             yield f"data: {json.dumps({'type': 'message_start'})}\n\n"
 
-            async for event in workspace.execute_stream(
-                request_id=request_id,
-                user_id=current_user.id,
-                conversation_id=conv.id,
-                messages=ai_history,
-                req=chat_req,
-                db=db
-            ):
-                if await request.is_disconnected():
-                    logger.warning(f"[{request_id}] Client disconnected from {workspace_id} stream.")
-                    break
+            # Check if user's prompt is requesting AI Image Generation
+            last_prompt = chat_req.message or (chat_req.messages[-1].content if chat_req.messages else "")
+            from app.services.image_intent_router import detect_image_intent
+            is_image_req, image_prompt = detect_image_intent(last_prompt)
 
-                if event.get("type") == "text":
-                    text_tokens.append(event["value"])
-                elif event.get("type") == "sources":
-                    for citation in event.get("value", []):
-                        if "url" in citation:
-                            web_citations.append(citation)
+            if is_image_req:
+                yield f"data: {json.dumps({'type': 'status', 'value': 'Generating AI image...'})}\n\n"
+                from app.services.image_provider import get_image_provider, ImageGenerationException
+                provider = get_image_provider()
 
-                yield f"data: {json.dumps(event)}\n\n"
+                try:
+                    res = await provider.generate_image(prompt=image_prompt)
+                    img_url = res.get("image_url")
+                    markdown_content = f"![AI Image: {image_prompt}]({img_url})"
+
+                    yield f"data: {json.dumps({'type': 'image', 'image_url': img_url, 'prompt': image_prompt, 'status': 'complete', 'provider': res.get('provider', 'pollinations'), 'model': res.get('model', 'pollinations'), 'value': markdown_content})}\n\n"
+                    text_tokens.append(markdown_content)
+                except ImageGenerationException as img_exc:
+                    err_msg = img_exc.message
+                    yield f"data: {json.dumps({'type': 'error', 'value': err_msg})}\n\n"
+                    text_tokens.append(err_msg)
+            else:
+                async for event in workspace.execute_stream(
+                    request_id=request_id,
+                    user_id=current_user.id,
+                    conversation_id=conv.id,
+                    messages=ai_history,
+                    req=chat_req,
+                    db=db
+                ):
+                    if await request.is_disconnected():
+                        logger.warning(f"[{request_id}] Client disconnected from {workspace_id} stream.")
+                        break
+
+                    if event.get("type") == "text":
+                        text_tokens.append(event["value"])
+                    elif event.get("type") == "sources":
+                        for citation in event.get("value", []):
+                            if "url" in citation:
+                                web_citations.append(citation)
+
+                    yield f"data: {json.dumps(event)}\n\n"
 
             assistant_content = "".join(text_tokens)
             if assistant_content and not await request.is_disconnected():

@@ -117,38 +117,60 @@ async def stream_chat(
             # Yield conversation ID first so frontend can bind state
             yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv.id})}\n\n"
 
-            from app.services.workspace_service import workspace_service
+            # Check if user's prompt is requesting AI Image Generation
+            last_prompt = chat_req.messages[-1].content if chat_req.messages else ""
+            from app.services.image_intent_router import detect_image_intent
+            is_image_req, image_prompt = detect_image_intent(last_prompt)
 
-            resolved_mode = chat_req.workspace_mode or chat_req.mode or "general"
-            async for event in workspace_service.execute_workspace_chat(
-                request_id=request_id,
-                user_id=current_user.id,
-                conversation_id=conv.id,
-                messages=ai_history,
-                workspace_mode_raw=resolved_mode,
-                document_ids=chat_req.document_ids or [],
-                attachments=chat_req.attachments,
-                model_alias=chat_req.model,
-                temperature=chat_req.temperature,
-                db=db,
-                response_style=chat_req.response_style,
-                response_tone=chat_req.response_tone,
-                semantic_chunk_limit=chat_req.semantic_chunk_limit,
-                similarity_filtering=chat_req.similarity_filtering,
-                language=chat_req.language
-            ):
-                if await request.is_disconnected():
-                    logger.warning(f"[{request_id}] Client disconnected — stopping stream.")
-                    break
+            if is_image_req:
+                yield f"data: {json.dumps({'type': 'status', 'value': 'Generating AI image...'})}\n\n"
+                from app.services.image_provider import get_image_provider, ImageGenerationException
+                provider = get_image_provider()
 
-                if event.get("type") == "text":
-                    text_tokens.append(event["value"])
-                elif event.get("type") == "sources":
-                    for citation in event.get("value", []):
-                        if "url" in citation:
-                            web_citations.append(citation)
+                try:
+                    res = await provider.generate_image(prompt=image_prompt)
+                    img_url = res.get("image_url")
+                    markdown_content = f"![AI Image: {image_prompt}]({img_url})"
 
-                yield f"data: {json.dumps(event)}\n\n"
+                    yield f"data: {json.dumps({'type': 'image', 'image_url': img_url, 'prompt': image_prompt, 'status': 'complete', 'provider': res.get('provider', 'openai'), 'model': res.get('model', 'dall-e-3'), 'value': markdown_content})}\n\n"
+                    text_tokens.append(markdown_content)
+                except ImageGenerationException as img_exc:
+                    err_msg = img_exc.message
+                    yield f"data: {json.dumps({'type': 'error', 'value': err_msg})}\n\n"
+                    text_tokens.append(err_msg)
+            else:
+                from app.services.workspace_service import workspace_service
+
+                resolved_mode = chat_req.workspace_mode or chat_req.mode or "general"
+                async for event in workspace_service.execute_workspace_chat(
+                    request_id=request_id,
+                    user_id=current_user.id,
+                    conversation_id=conv.id,
+                    messages=ai_history,
+                    workspace_mode_raw=resolved_mode,
+                    document_ids=chat_req.document_ids or [],
+                    attachments=chat_req.attachments,
+                    model_alias=chat_req.model,
+                    temperature=chat_req.temperature,
+                    db=db,
+                    response_style=chat_req.response_style,
+                    response_tone=chat_req.response_tone,
+                    semantic_chunk_limit=chat_req.semantic_chunk_limit,
+                    similarity_filtering=chat_req.similarity_filtering,
+                    language=chat_req.language
+                ):
+                    if await request.is_disconnected():
+                        logger.warning(f"[{request_id}] Client disconnected — stopping stream.")
+                        break
+
+                    if event.get("type") == "text":
+                        text_tokens.append(event["value"])
+                    elif event.get("type") == "sources":
+                        for citation in event.get("value", []):
+                            if "url" in citation:
+                                web_citations.append(citation)
+
+                    yield f"data: {json.dumps(event)}\n\n"
 
             # 4. Persist completed assistant message
             assistant_content = "".join(text_tokens)

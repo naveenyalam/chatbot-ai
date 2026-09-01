@@ -26,6 +26,9 @@ import { MarkdownRenderer } from "./MarkdownRenderer";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { ToolActivity } from "./ToolActivity";
 import { CodeExecutionResult } from "./CodeExecutionResult";
+import { ImageMessage } from "./ImageMessage";
+import { ImageViewerModal } from "./ImageViewerModal";
+import { downloadImage } from "@/lib/api/client";
 import { useApp } from "@/components/providers/ThemeProvider";
 import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
@@ -96,6 +99,9 @@ export function ChatArea({
 
   // Action popover state
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // AI Image viewer modal state
+  const [activeModalImage, setActiveModalImage] = useState<{ url: string; prompt?: string } | null>(null);
 
   // Scroll locks
   const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
@@ -512,7 +518,28 @@ export function ChatArea({
                             </div>
                           ) : (
                             <>
-                              <MarkdownRenderer content={actualContent} />
+                              {(() => {
+                                const imageInfo = msg.imageUrl
+                                  ? { imageUrl: msg.imageUrl, prompt: msg.imagePrompt }
+                                  : (() => {
+                                      const match = actualContent.match(/!\[(?:AI Image:\s*)?(.*?)\]\((https?:\/\/[^\s\)]+)\)/);
+                                      return match ? { prompt: match[1] || "AI Image", imageUrl: match[2] } : null;
+                                    })();
+
+                                if (imageInfo) {
+                                  return (
+                                    <ImageMessage
+                                      imageUrl={imageInfo.imageUrl}
+                                      prompt={imageInfo.prompt}
+                                      isLoading={msg.isStreaming && !imageInfo.imageUrl}
+                                      onOpenModal={(url, prompt) => setActiveModalImage({ url, prompt })}
+                                      onDownload={(url, filename) => downloadImage(url, filename)}
+                                    />
+                                  );
+                                }
+
+                                return <MarkdownRenderer content={actualContent} />;
+                              })()}
                               {msg.isStreaming && (
                                 <span className="inline-block w-1.5 h-4.5 bg-accent ml-1 align-middle animate-pulse rounded-full" />
                               )}
@@ -680,6 +707,15 @@ export function ChatArea({
         onSelectTool={onSelectTool}
         onAttachClick={onAttachClick}
         onUploadComplete={onUploadComplete}
+      />
+
+      {/* AI Image Full Screen Modal */}
+      <ImageViewerModal
+        isOpen={!!activeModalImage}
+        imageUrl={activeModalImage?.url || ""}
+        prompt={activeModalImage?.prompt}
+        onClose={() => setActiveModalImage(null)}
+        onDownload={(url, filename) => downloadImage(url, filename)}
       />
     </div>
   );

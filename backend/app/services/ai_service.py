@@ -41,6 +41,15 @@ class AIService:
             )
             self.provider = MockLLMProvider()
             self._provider_name = "mock"
+        elif not settings.ai_is_real:
+            # No key configured — use NotConfiguredProvider which raises a clear error
+            logger.error(
+                f"LLM Provider '{settings.LLM_PROVIDER}' not configured and AI_USE_MOCK=false. "
+                "Requests will fail with AI_PROVIDER_NOT_CONFIGURED error. "
+                "Set CLOUD_LLM_API_KEY or AI_API_KEY in backend environment to enable real AI responses."
+            )
+            self.provider = NotConfiguredProvider()
+            self._provider_name = "not_configured"
         elif settings.LLM_PROVIDER == "ollama":
             ollama_url = settings.OLLAMA_BASE_URL or settings.AI_BASE_URL
             ollama_key = settings.AI_API_KEY or "ollama"
@@ -50,7 +59,7 @@ class AIService:
                 base_url=ollama_url
             )
             self._provider_name = "ollama"
-        elif settings.ai_is_real:
+        else:
             api_key = settings.CLOUD_LLM_API_KEY or settings.AI_API_KEY
             logger.info(f"Initializing cloud LLM provider '{settings.LLM_PROVIDER}' at {settings.AI_BASE_URL}")
             self.provider = OpenAICompatibleProvider(
@@ -58,15 +67,6 @@ class AIService:
                 base_url=settings.AI_BASE_URL
             )
             self._provider_name = settings.LLM_PROVIDER
-        else:
-            # No key configured — use NotConfiguredProvider which raises a clear error
-            logger.error(
-                f"LLM Provider '{settings.LLM_PROVIDER}' not configured and AI_USE_MOCK=false. "
-                "Requests will fail with AI_PROVIDER_NOT_CONFIGURED error. "
-                "Set CLOUD_LLM_API_KEY or AI_API_KEY in backend environment to enable real AI responses."
-            )
-            self.provider = NotConfiguredProvider()
-            self._provider_name = "not_configured"
 
     async def stream_chat(
         self,
