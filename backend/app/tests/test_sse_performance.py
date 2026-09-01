@@ -15,11 +15,12 @@ client = TestClient(app)
 def test_user_token():
     session = SessionLocal()
     email = "sse_perf@nova-ai.local"
-    session.query(User).filter(User.email == email).delete()
-    user = User(name="SSE Perf User", email=email, password_hash=hash_password("Pass123!"))
-    session.add(user)
-    session.commit()
-    session.refresh(user)
+    user = session.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(name="SSE Perf User", email=email, password_hash=hash_password("Pass123!"))
+        session.add(user)
+        session.commit()
+        session.refresh(user)
     token = create_access_token({"sub": user.id})
     session.close()
     return token

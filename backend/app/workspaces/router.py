@@ -63,17 +63,24 @@ async def workspace_chat_stream(
     db: Session = Depends(get_db)
 ):
     """
-    Unified workspace chat streaming endpoint.
-    Routes requests according to workspace_id parameter, executes mode pipeline, and streams SSE events.
+    Unified workspace chat streaming endpoint optimized for ultra-fast TTFT.
+    In-memory context preparation with deferred post-stream database persistence.
     """
-    request_id = getattr(request.state, "request_id", "unknown")
+    import time
+    import uuid
+    t_req_start = time.perf_counter()
+
+    request_id = getattr(request.state, "request_id", None) or f"nova-{uuid.uuid4().hex[:12]}"
     workspace = workspace_registry.get_workspace(workspace_id)
     norm_mode = workspace.mode.value
 
-    # Check user budget
+    # 1. Fast Redis Budget Check
+    t_redis0 = time.perf_counter()
     UsageBudget.check_request_budget(current_user.id)
+    t_redis_ms = (time.perf_counter() - t_redis0) * 1000
 
-    # 1. Resolve or create Conversation with workspace_mode attribute
+    # 2. Fast Conversation Verification (Read-Only 1 row check or generate UUID)
+    t_db0 = time.perf_counter()
     conv_id = chat_req.conversation_id
     if conv_id:
         conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
@@ -83,61 +90,58 @@ async def workspace_chat_stream(
             conv.workspace_mode = norm_mode
             db.commit()
     else:
-        user_text = chat_req.message or (chat_req.messages[-1].content if chat_req.messages else "New Chat")
-        title = user_text[:50] + "..." if len(user_text) > 50 else user_text
-        try:
-            conv = Conversation(
-                user_id=current_user.id,
-                title=title,
-                model=chat_req.model or "nova-intelligence",
-                workspace_mode=norm_mode
-            )
-            db.add(conv)
-            db.commit()
-            db.refresh(conv)
-        except Exception as exc:
-            db.rollback()
-            logger.error(f"[{request_id}] Failed to create conversation: {exc}")
-            raise HTTPException(status_code=500, detail="Failed to initialize chat session.")
+        conv_id = f"conv_{uuid.uuid4().hex[:16]}"
+    t_db_ms = (time.perf_counter() - t_db0) * 1000
 
-    # 2. Sync conversation messages with frontend payload
-    client_msgs = chat_req.messages
+    # 3. Fast In-Memory Context Construction (No pre-LLM DB sync or re-queries)
+    t_prompt0 = time.perf_counter()
+    client_msgs = chat_req.messages or []
     if not client_msgs and chat_req.message:
         from app.workspaces.schemas import WorkspaceChatMessage
         client_msgs = [WorkspaceChatMessage(role="user", content=chat_req.message)]
 
-    if client_msgs:
-        from app.services.message_sync import sync_conversation_messages
-        try:
-            sync_conversation_messages(db, conv.id, client_msgs)
-        except Exception as exc:
-            logger.error(f"[{request_id}] Failed to sync user messages: {exc}")
-            raise HTTPException(status_code=500, detail="Failed to synchronize conversation history.")
-    else:
-        raise HTTPException(status_code=400, detail="Message content cannot be empty.")
+    if not client_msgs:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Message content cannot be empty.")
 
+    raw_history = [
+        {"role": (m.role if hasattr(m, "role") else m.get("role")),
+         "content": (m.content if hasattr(m, "content") else m.get("content", ""))}
+        for m in client_msgs
+    ]
+    bounded_history = raw_history[-12:] if len(raw_history) > 12 else raw_history
 
-    # 3. Load conversation context
-    db_messages = db.query(Message).filter(
-        Message.conversation_id == conv.id
-    ).order_by(Message.created_at.desc()).limit(settings.MAX_CONTEXT_MESSAGES).all()
-    db_messages.reverse()
-
-    from app.core.context import truncate_context_messages
-    ai_history = [{"role": m.role, "content": m.content} for m in db_messages]
+    from app.core.context import truncate_context_messages, compress_old_messages
+    ai_history = compress_old_messages(bounded_history, keep_full_count=4)
     ai_history = truncate_context_messages(ai_history, max_chars=settings.MAX_TOKENS_PER_REQUEST * 4)
+    t_prompt_ms = (time.perf_counter() - t_prompt0) * 1000
+
+    t_pre_llm_ms = (time.perf_counter() - t_req_start) * 1000
+    logger.info(
+        f"[PERF] request_id={request_id} redis_ms={t_redis_ms:.2f} "
+        f"database_ms={t_db_ms:.2f} prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f}"
+    )
+
+    user_text = chat_req.message or (client_msgs[-1].content if hasattr(client_msgs[-1], "content") else client_msgs[-1].get("content", ""))
+    first_prompt_title = user_text[:50] + "..." if len(user_text) > 50 else user_text
 
     async def event_generator():
         text_tokens = []
         web_citations = []
+        first_token_time = None
+
         try:
-            yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv.id})}\n\n"
+            # Immediate HTTP stream ping flush across proxies
+            yield ": ping\n\n"
+
+            yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv_id})}\n\n"
             yield f"data: {json.dumps({'type': 'message_start'})}\n\n"
 
+            t_sse_first_event_ms = (time.perf_counter() - t_req_start) * 1000
+            logger.info(f"[PERF] request_id={request_id} sse_first_event_ms={t_sse_first_event_ms:.2f}")
+
             # Check if user's prompt is requesting AI Image Generation
-            last_prompt = chat_req.message or (chat_req.messages[-1].content if chat_req.messages else "")
             from app.services.image_intent_router import detect_image_intent
-            is_image_req, image_prompt = detect_image_intent(last_prompt)
+            is_image_req, image_prompt = detect_image_intent(user_text)
 
             if is_image_req:
                 yield f"data: {json.dumps({'type': 'status', 'value': 'Generating AI image...'})}\n\n"
@@ -159,7 +163,7 @@ async def workspace_chat_stream(
                 async for event in workspace.execute_stream(
                     request_id=request_id,
                     user_id=current_user.id,
-                    conversation_id=conv.id,
+                    conversation_id=conv_id,
                     messages=ai_history,
                     req=chat_req,
                     db=db
@@ -169,6 +173,10 @@ async def workspace_chat_stream(
                         break
 
                     if event.get("type") == "text":
+                        if first_token_time is None:
+                            first_token_time = time.perf_counter()
+                            ft_ms = (first_token_time - t_req_start) * 1000
+                            logger.info(f"[PERF] request_id={request_id} llm_first_token_ms={ft_ms:.2f}")
                         text_tokens.append(event["value"])
                     elif event.get("type") == "sources":
                         for citation in event.get("value", []):
@@ -177,57 +185,80 @@ async def workspace_chat_stream(
 
                     yield f"data: {json.dumps(event)}\n\n"
 
+            # Post-Stream Single Database Transaction for Messages & Conversation Sync
             assistant_content = "".join(text_tokens)
+            total_req_ms = (time.perf_counter() - t_req_start) * 1000
+            logger.info(f"[PERF] request_id={request_id} total_response_ms={total_req_ms:.2f} tokens_count={len(text_tokens)}")
+
             if assistant_content and not await request.is_disconnected():
                 UsageBudget.record_request(current_user.id, len(assistant_content) // 4)
-                with SessionLocal() as db_new:
-                    from datetime import datetime
-                    assistant_msg = Message(
-                        conversation_id=conv.id,
-                        role="assistant",
-                        content=assistant_content,
-                        status="complete",
-                        created_at=datetime.utcnow()
-                    )
-                    db_new.add(assistant_msg)
-                    db_new.flush()
-
-                    if web_citations:
-                        from app.models.message import MessageSource
-                        for cit in web_citations:
-                            db_source = MessageSource(
-                                message_id=assistant_msg.id,
-                                title=cit.get("title", "Source"),
-                                url=cit.get("url", ""),
-                                domain=cit.get("domain", "web"),
-                                snippet=cit.get("snippet", ""),
-                                published_at=datetime.fromisoformat(cit["published_at"])
-                                if cit.get("published_at") else None
+                try:
+                    with SessionLocal() as db_new:
+                        # 1. Ensure conversation exists in DB
+                        existing_conv = db_new.query(Conversation).filter(Conversation.id == conv_id).first()
+                        if not existing_conv:
+                            existing_conv = Conversation(
+                                id=conv_id,
+                                user_id=current_user.id,
+                                title=first_prompt_title,
+                                model=chat_req.model or "nova-intelligence",
+                                workspace_mode=norm_mode
                             )
-                            db_new.add(db_source)
+                            db_new.add(existing_conv)
+                            db_new.flush()
 
-                    db_new.query(Conversation).filter(Conversation.id == conv.id).update({
-                        Conversation.updated_at: func.now()
-                    })
-                    db_new.commit()
+                        # 2. Sync client messages into DB
+                        from app.services.message_sync import sync_conversation_messages
+                        sync_conversation_messages(db_new, conv_id, client_msgs)
+
+                        # 3. Add completed assistant message
+                        assistant_msg = Message(
+                            conversation_id=conv_id,
+                            role="assistant",
+                            content=assistant_content,
+                            status="complete",
+                            created_at=datetime.utcnow()
+                        )
+                        db_new.add(assistant_msg)
+                        db_new.flush()
+
+                        if web_citations:
+                            from app.models.message import MessageSource
+                            for cit in web_citations:
+                                db_source = MessageSource(
+                                    message_id=assistant_msg.id,
+                                    title=cit.get("title", "Source"),
+                                    url=cit.get("url", ""),
+                                    domain=cit.get("domain", "web"),
+                                    snippet=cit.get("snippet", ""),
+                                    published_at=datetime.fromisoformat(cit["published_at"])
+                                    if cit.get("published_at") else None
+                                )
+                                db_new.add(db_source)
+
+                        db_new.query(Conversation).filter(Conversation.id == conv_id).update({
+                            Conversation.updated_at: func.now()
+                        })
+                        db_new.commit()
+                except Exception as db_exc:
+                    logger.error(f"[{request_id}] Failed to commit post-stream conversation state: {db_exc}")
 
             yield f"data: {json.dumps({'type': 'message_complete'})}\n\n"
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
         except Exception as exc:
             logger.exception(f"[{request_id}] Workspace execution error in {workspace_id}: {exc}")
-            # Frontend SSE parser expects {"type": "error", "value": "string"}
             from app.core.errors import NOVABaseError
             user_msg = exc.user_message if isinstance(exc, NOVABaseError) else str(exc)
             err_event = {"type": "error", "value": user_msg}
             yield f"data: {json.dumps(err_event)}\n\n"
 
-    return StreamingResponse(
+    response = StreamingResponse(
         event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache, no-transform",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
-        }
+        media_type="text/event-stream"
     )
+    response.headers["X-Request-ID"] = request_id
+    response.headers["Cache-Control"] = "no-cache, no-transform"
+    response.headers["X-Accel-Buffering"] = "no"
+    response.headers["Connection"] = "keep-alive"
+    return response

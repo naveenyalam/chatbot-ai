@@ -50,36 +50,19 @@ async def stream_chat(
 
     conv_id = chat_req.conversation_id
 
-    # 2. Database conversation check timing
+    # 2. Fast Conversation Verification (Read-Only 1 row check or generate UUID)
     t_db0 = time.perf_counter()
     if conv_id:
-        conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
-        if not conv or conv.user_id != current_user.id:
+        conv_obj = db.query(Conversation.id).filter(Conversation.id == conv_id, Conversation.user_id == current_user.id).first()
+        if not conv_obj:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Conversation not found."
             )
     else:
-        first_prompt = chat_req.messages[-1].content if chat_req.messages else "New Chat"
-        title = first_prompt[:50] + "..." if len(first_prompt) > 50 else first_prompt
-
-        try:
-            conv = Conversation(
-                user_id=current_user.id,
-                title=title,
-                model=chat_req.model or "nova-intelligence"
-            )
-            db.add(conv)
-            db.commit()
-            db.refresh(conv)
-            logger.info(f"[{request_id}] Created new conversation {conv.id}")
-        except Exception as exc:
-            db.rollback()
-            logger.error(f"[{request_id}] Failed to create conversation: {exc}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to initialize chat session."
-            )
+        conv_id = f"conv_{uuid.uuid4().hex[:16]}"
+    first_prompt = chat_req.messages[-1].content if chat_req.messages else "New Chat"
+    first_prompt_title = first_prompt[:50] + "..." if len(first_prompt) > 50 else first_prompt
     t_db_ms = (time.perf_counter() - t_db0) * 1000
 
     # 3. Fast In-Memory Context Construction (No redundant DB roundtrips)
@@ -116,7 +99,7 @@ async def stream_chat(
             yield ": ping\n\n"
 
             # Yield conversation ID first so frontend can bind state
-            yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv.id})}\n\n"
+            yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv_id})}\n\n"
 
             t_sse_first_event_ms = (time.perf_counter() - t_req_start) * 1000
             logger.info(f"[PERF] request_id={request_id} sse_first_event_ms={t_sse_first_event_ms:.2f}")
@@ -149,7 +132,7 @@ async def stream_chat(
                 async for event in workspace_service.execute_workspace_chat(
                     request_id=request_id,
                     user_id=current_user.id,
-                    conversation_id=conv.id,
+                    conversation_id=conv_id,
                     messages=ai_history,
                     workspace_mode_raw=resolved_mode,
                     document_ids=chat_req.document_ids or [],
@@ -190,8 +173,21 @@ async def stream_chat(
                 try:
                     with SessionLocal() as db_new:
                         from datetime import datetime
+                        # Ensure conversation exists
+                        existing_conv = db_new.query(Conversation).filter(Conversation.id == conv_id).first()
+                        if not existing_conv:
+                            existing_conv = Conversation(
+                                id=conv_id,
+                                user_id=current_user.id,
+                                title=first_prompt_title,
+                                model=chat_req.model or "nova-intelligence",
+                                workspace_mode=chat_req.workspace_mode or chat_req.mode or "general"
+                            )
+                            db_new.add(existing_conv)
+                            db_new.flush()
+
                         assistant_msg = Message(
-                            conversation_id=conv.id,
+                            conversation_id=conv_id,
                             role="assistant",
                             content=assistant_content,
                             status="complete",
@@ -214,7 +210,7 @@ async def stream_chat(
                                 )
                                 db_new.add(db_source)
 
-                        db_new.query(Conversation).filter(Conversation.id == conv.id).update({
+                        db_new.query(Conversation).filter(Conversation.id == conv_id).update({
                             Conversation.updated_at: func.now()
                         })
                         db_new.commit()

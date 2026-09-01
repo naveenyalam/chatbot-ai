@@ -20,17 +20,16 @@ def auth_context():
     """Create a test user and valid auth token for workspace testing."""
     session = SessionLocal()
     email = "workspace_test_user@nova-ai.local"
-    session.query(User).filter(User.email == email).delete()
-    session.commit()
-
-    user = User(
-        name="Workspace User",
-        email=email,
-        password_hash=hash_password("WorkspacePass123!")
-    )
-    session.add(user)
-    session.commit()
-    session.refresh(user)
+    user = session.query(User).filter(User.email == email).first()
+    if not user:
+        user = User(
+            name="Workspace User",
+            email=email,
+            password_hash=hash_password("WorkspacePass123!")
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
 
     token = create_access_token({"sub": user.id})
     cookies = {"access_token": token}

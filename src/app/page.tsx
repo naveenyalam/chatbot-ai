@@ -390,6 +390,40 @@ export default function Home() {
 
     const backendConvId = targetIdRef.current.startsWith("temp-") ? undefined : targetIdRef.current;
 
+    let pendingChunk: string | null = null;
+    let rafId: number | null = null;
+
+    const scheduleChunkUpdate = (latestChunk: string) => {
+      pendingChunk = latestChunk;
+      if (rafId === null) {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          if (pendingChunk !== null) {
+            const chunkToApply = pendingChunk;
+            setChats((prevChats) =>
+              prevChats.map((c) =>
+                c.id === targetIdRef.current
+                  ? {
+                      ...c,
+                      messages: c.messages.map((m) =>
+                        m.id === assistantMsgId
+                          ? {
+                              ...m,
+                              content: chunkToApply,
+                              status: "streaming" as const,
+                              isStreaming: true,
+                            }
+                          : m
+                      ),
+                    }
+                  : c
+              )
+            );
+          }
+        });
+      }
+    };
+
     const controller = streamChatResponse(history, {
       model: selectedModel,
       conversation_id: backendConvId,
@@ -565,27 +599,13 @@ export default function Home() {
         setActiveChatId(newRealId);
       },
       onChunk: (chunk) => {
-        setChats((prevChats) =>
-          prevChats.map((c) =>
-            c.id === targetIdRef.current
-              ? {
-                  ...c,
-                  messages: c.messages.map((m) =>
-                    m.id === assistantMsgId
-                      ? {
-                          ...m,
-                          content: chunk,
-                          status: "streaming" as const,
-                          isStreaming: true,
-                        }
-                      : m
-                  ),
-                }
-              : c
-          )
-        );
+        scheduleChunkUpdate(chunk);
       },
       onComplete: (fullText) => {
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
         setIsLoading(false);
         setChats((prevChats) => {
           const finalChats = prevChats.map((c) =>

@@ -125,22 +125,6 @@ class AgentManager:
                 temperature=temperature
             )
 
-            # Persist AgentRun record
-            db_run = AgentRun(
-                request_id=request_id,
-                user_id=user_id,
-                conversation_id=conversation_id,
-                mode=resolved_mode,
-                status="running"
-            )
-            try:
-                db.add(db_run)
-                db.flush()
-                state.db_run_id = db_run.id
-            except Exception as db_err:
-                logger.error(f"Failed to persist AgentRun: {db_err}")
-                # Non-fatal: continue execution without DB record
-
             agent = _select_agent(resolved_mode, document_ids)
             logger.info(
                 f"[{request_id}] AgentManager: starting {agent.agent_type} agent "
@@ -176,29 +160,35 @@ class AgentManager:
 
             finally:
                 elapsed = time.time() - start_wall
-                # Update DB record
-                if state.db_run_id:
-                    try:
-                        db.query(AgentRun).filter(AgentRun.id == state.db_run_id).update({
-                            "status": final_status,
-                            "step_count": state.step,
-                            "tool_call_count": state.tool_calls,
-                            "completed_at": datetime.utcnow()
-                        })
+                # Post-execution AgentRun persistence in single database transaction
+                try:
+                    db_run = AgentRun(
+                        request_id=request_id,
+                        user_id=user_id,
+                        conversation_id=conversation_id,
+                        mode=resolved_mode,
+                        status=final_status,
+                        step_count=state.step,
+                        tool_call_count=state.tool_calls,
+                        completed_at=datetime.utcnow()
+                    )
+                    db.add(db_run)
+                    db.flush()
+                    state.db_run_id = db_run.id
 
-                        # Persist tool call records
-                        for activity in state.tool_activity:
-                            tc = AgentToolCall(
-                                agent_run_id=state.db_run_id,
-                                tool_name=activity.tool,
-                                status=activity.status,
-                                completed_at=datetime.utcnow()
-                            )
-                            db.add(tc)
+                    # Persist tool call records
+                    for activity in state.tool_activity:
+                        tc = AgentToolCall(
+                            agent_run_id=db_run.id,
+                            tool_name=activity.tool,
+                            status=activity.status,
+                            completed_at=datetime.utcnow()
+                        )
+                        db.add(tc)
 
-                        db.commit()
-                    except Exception as db_err:
-                        logger.error(f"[{request_id}] Failed to finalize AgentRun: {db_err}")
+                    db.commit()
+                except Exception as db_err:
+                    logger.error(f"[{request_id}] Failed to finalize AgentRun: {db_err}")
 
                 # Record agent and tool Prometheus metrics
                 try:

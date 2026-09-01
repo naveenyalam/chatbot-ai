@@ -3,7 +3,7 @@ import json
 import logging
 import asyncio
 import random
-from typing import AsyncGenerator, List, Dict
+from typing import AsyncGenerator, List, Dict, Optional
 import httpx
 from app.core.config import settings
 from app.core.circuit_breaker import CircuitBreaker, CircuitBreakerOpenException
