@@ -392,33 +392,42 @@ export default function Home() {
 
     let pendingChunk: string | null = null;
     let rafId: number | null = null;
+    let isFirstTokenRendered = false;
+
+    const applyChunkToState = (chunkToApply: string) => {
+      setChats((prevChats) =>
+        prevChats.map((c) =>
+          c.id === targetIdRef.current
+            ? {
+                ...c,
+                messages: c.messages.map((m) =>
+                  m.id === assistantMsgId
+                    ? {
+                        ...m,
+                        content: chunkToApply,
+                        status: "streaming" as const,
+                        isStreaming: true,
+                      }
+                    : m
+                ),
+              }
+            : c
+        )
+      );
+    };
 
     const scheduleChunkUpdate = (latestChunk: string) => {
       pendingChunk = latestChunk;
+      if (!isFirstTokenRendered) {
+        isFirstTokenRendered = true;
+        applyChunkToState(latestChunk);
+        return;
+      }
       if (rafId === null) {
         rafId = requestAnimationFrame(() => {
           rafId = null;
           if (pendingChunk !== null) {
-            const chunkToApply = pendingChunk;
-            setChats((prevChats) =>
-              prevChats.map((c) =>
-                c.id === targetIdRef.current
-                  ? {
-                      ...c,
-                      messages: c.messages.map((m) =>
-                        m.id === assistantMsgId
-                          ? {
-                              ...m,
-                              content: chunkToApply,
-                              status: "streaming" as const,
-                              isStreaming: true,
-                            }
-                          : m
-                      ),
-                    }
-                  : c
-              )
-            );
+            applyChunkToState(pendingChunk);
           }
         });
       }

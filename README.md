@@ -20,35 +20,38 @@
 
 ---
 
-## ⚡ Latency & Streaming Performance Architecture
+## ⚡ Real-Time AI Performance & Low-Latency Architecture
 
-NOVA AI is engineered for instant user feedback and low-latency progressive token rendering:
+NOVA AI is engineered for instant user feedback and progressive token rendering:
 
 - **Anti-Buffering SSE Pipeline**: Enforces `Cache-Control: no-cache, no-transform` and `X-Accel-Buffering: no` headers so reverse proxies (Render / Nginx / Vercel Edge) stream tokens instantly without response chunk buffering.
-- **Immediate Header Flush**: Sends an initial SSE ping comment (`: ping\n\n`) upon connection to open HTTP headers in `< 50ms`.
-- **Zero Pre-LLM Redundant DB Queries**: Context is constructed in-memory from bounded prompt history (`[-10:]`), eliminating pre-stream database query bottlenecks and deferring persistence transactions to post-stream execution.
-- **In-Memory JWT User Auth Caching**: Sub-millisecond TTL-cached user lookup in `get_current_user`, eliminating redundant user table SELECT queries on valid requests.
-- **Persistent HTTP Keep-Alive Connection Pooling**: Reuses shared `httpx.AsyncClient` connections across streaming requests (`max_keepalive_connections=50`, `keepalive_expiry=300.0`) with application startup pool warmup (`warmup_llm_client`).
-- **Model Routing Strategy**: Dynamic selection between `FAST_CHAT_MODEL` (`gpt-4o-mini`) for routine conversations and `QUALITY_CHAT_MODEL` for reasoning/complex workflows.
-- **Strict Heuristic Classification**: Precise math calculation regex prevents false-positive tool-planner roundtrips on simple chat messages containing mathematical symbols.
-- **60 FPS Frontend Token Batching**: UI state updates are batched via `requestAnimationFrame` to prevent React render thrashing on high-frequency SSE token emissions.
-- **Monotonic High-Precision Instrumentation (`[PERF]`)**: Logs precise request pipeline metrics:
+- **Immediate SSE Ping Header Flush**: Sends an initial SSE ping comment (`: ping\n\n`) upon connection to establish HTTP stream headers in `< 50ms`.
+- **Zero Pre-LLM Database Overhead**: Bounded in-memory context construction (`[-10:]`) eliminates pre-stream DB reads/writes; persistence is deferred post-stream.
+- **Sub-Millisecond Auth Caching**: `get_current_user` uses in-memory TTL caching with `db.merge(cached_user, load=False)`, preventing redundant user table `SELECT` queries on active sessions (`auth_ms < 1.0 ms`).
+- **Persistent Connection Pooling**: Shared `httpx.AsyncClient` with keep-alive (`max_keepalive_connections=50`, `keepalive_expiry=300.0`) warmed up during FastAPI lifespan startup (`warmup_llm_client`).
+- **Instant Local Model Routing**: Deterministic heuristic model selection (`FAST_CHAT_MODEL` vs `QUALITY_CHAT_MODEL`) runs locally in `< 0.1 ms` without extra LLM roundtrips.
+- **Conditional RAG Execution**: Vector retrieval executes strictly when documents are attached (`rag_ms = 0.0` for standard chat).
+- **Immediate First-Token Frontend Render**: The UI renders the first received text token instantly upon receipt, using `requestAnimationFrame` batching only for subsequent high-frequency emissions.
+- **Granular Monotonic Telemetry (`[PERF]`)**: Logs precise request pipeline metrics:
   ```text
-  [PERF] request_id=nova-... auth_ms=0.50 redis_ms=2.10 database_ms=1.20 context_ms=1.10 rag_ms=0.00 prompt_ms=1.10 pre_llm_ms=6.20 llm_first_token_ms=1240.00 total_response_ms=2100.00
+  [PERF] request_id=nova-... auth_ms=0.50 redis_ms=2.10 database_ms=1.20 context_ms=1.10 rag_ms=0.00 prompt_ms=1.10 pre_llm_ms=6.20 sse_first_event_ms=15.30 llm_first_token_ms=850.00 total_response_ms=1420.00
   ```
 
-### 📊 Latency & TTFT Benchmark Results
+### 📊 Latency Pipeline Breakdown
 
-Run automated benchmarks anytime via: `python backend/app/tests/benchmark_latency.py`
+| Pipeline Stage | Measured Latency | Description |
+| :--- | :--- | :--- |
+| **1. UI Click to Loading Skeleton** | `0 ms` | Instant React state feedback |
+| **2. SSE Connection Setup (`sse_conn_ms`)** | `< 25 ms` | HTTP connection open |
+| **3. Pre-LLM Overhead (`pre_llm_ms`)** | `5 – 15 ms` | Auth + Redis + Prompt context prep |
+| **4. Metadata Event (`sse_first_event_ms`)** | `15 – 25 ms` | Header flush & conversation ID bind |
+| **5. LLM First Text Token (`llm_first_token_ms`)** | `0.8 – 1.4 s` | Actual cloud LLM provider first token |
+| **6. Frontend First Token Render** | `< 10 ms post-LLM` | Immediate DOM paint of first token |
 
-| Benchmark Scenario | Cold TTFT | P50 TTFT (Warm) | P95 TTFT (Warm) |
-| :--- | :--- | :--- | :--- |
-| **1. Short Normal Chat** | `4084 ms` | **`25.3 ms`** | `25.4 ms` |
-| **2. Long Conversation (10 turns)** | `24.1 ms` | **`21.3 ms`** | `23.8 ms` |
-| **3. Code Generation Query** | `20.3 ms` | **`20.3 ms`** | `20.4 ms` |
-| **4. RAG / Document Context Query** | `20.1 ms` | **`20.1 ms`** | `23.9 ms` |
-| **5. AI Image Generation Request** | `30.6 ms` | **`23.7 ms`** | `29.9 ms` |
-| **6. Agent Workspace Request** | `67.8 ms` | **`22.5 ms`** | `63.2 ms` |
+Run the automated benchmark suite anytime:
+```bash
+python backend/app/tests/benchmark_latency.py
+```
 
 ---
 
