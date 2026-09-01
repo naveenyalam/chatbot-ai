@@ -20,6 +20,23 @@ export interface StreamChatOptions {
   onConversationCreated?: (id: string) => void;
   onError: (error: Error) => void;
   signal?: AbortSignal;
+  response_style?: string;
+  response_tone?: string;
+  semantic_chunk_limit?: number;
+  similarity_filtering?: boolean;
+  language?: string;
+}
+
+export async function fetchWorkspaces() {
+  const res = await fetch(`${API_URL}/api/workspaces`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch workspaces list");
+  return res.json();
+}
+
+export async function fetchWorkspaceDetail(workspaceId: string) {
+  const res = await fetch(`${API_URL}/api/workspaces/${workspaceId}`, { credentials: "include" });
+  if (!res.ok) throw new Error(`Failed to fetch metadata for workspace ${workspaceId}`);
+  return res.json();
 }
 
 /**
@@ -41,19 +58,27 @@ export function streamChatResponse(
         content: m.content,
       }));
 
-      const response = await fetch(`${API_URL}/api/chat/stream`, {
+      const activeMode = (options.mode || "general").toLowerCase();
+      const endpoint = `${API_URL}/api/workspaces/${encodeURIComponent(activeMode)}/chat`;
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           messages: payloadMessages,
+          message: payloadMessages[payloadMessages.length - 1]?.content || "",
           model: options.model || "nova-intelligence",
           temperature: options.temperature ?? 0.7,
           conversation_id: options.conversation_id,
           document_ids: options.document_ids,
-          mode: options.mode,
-          workspace_mode: options.mode,
+          workspace_mode: activeMode,
+          response_style: options.response_style,
+          response_tone: options.response_tone,
+          semantic_chunk_limit: options.semantic_chunk_limit,
+          similarity_filtering: options.similarity_filtering,
+          language: options.language,
         }),
         credentials: "include", // Crucial for session cookies exchange
         signal,
@@ -105,38 +130,42 @@ export function streamChatResponse(
                 break;
               }
 
+              let event: Record<string, unknown> | null = null;
               try {
-                const event = JSON.parse(contentValue);
+                event = JSON.parse(contentValue);
+              } catch {
+                // Not valid JSON — fall through to legacy text parsing below
+              }
+
+              if (event !== null) {
                 if (event.type === "conversation_id") {
-                  options.onConversationCreated?.(event.value);
+                  options.onConversationCreated?.(event.value as string);
                 } else if (event.type === "status") {
-                  options.onStatusChange?.(event.value, event.query);
+                  options.onStatusChange?.(event.value as string, event.query as string | undefined);
                 } else if (event.type === "research_plan") {
-                  options.onResearchPlan?.(event.value);
+                  options.onResearchPlan?.(event.value as string[]);
                 } else if (event.type === "agent_start") {
-                  options.onAgentStart?.(event.agent, event.label);
+                  options.onAgentStart?.(event.agent as string, event.label as string);
                 } else if (event.type === "tool_start") {
-                  options.onToolStart?.(event.tool, event.label);
+                  options.onToolStart?.(event.tool as string, event.label as string);
                 } else if (event.type === "tool_result") {
-                  options.onToolResult?.(event.tool, event.success, event.data, event.label, event.error);
+                  options.onToolResult?.(event.tool as string, event.success as boolean, event.data, event.label as string, event.error as string | undefined);
                 } else if (event.type === "code_result") {
                   options.onCodeResult?.(event.data);
                 } else if (event.type === "agent_complete") {
                   options.onAgentComplete?.(event.tool_activity);
                 } else if (event.type === "sources") {
-                  options.onSources?.(event.value);
+                  options.onSources?.(event.value as unknown[]);
                 } else if (event.type === "text") {
-                  fullText += event.value;
+                  fullText += event.value as string;
                   options.onChunk(fullText);
                 } else if (event.type === "error") {
-                  throw new Error(event.value);
+                  // Always throw error events so they reach onError handler
+                  throw new Error((event.value as string) || "An unknown error occurred.");
                 }
-              } catch (e) {
-                if (e instanceof Error && e.message !== "Unexpected token" && !e.message.includes("JSON")) {
-                  // Re-raise actual downstream errors (like those thrown by error event)
-                  throw e;
-                }
-                // Backward compatible legacy plain text tokens parsing
+                // message_start / message_complete / done — acknowledged, no action needed
+              } else {
+                // Legacy plain text tokens
                 if (contentValue.startsWith("[CONVERSATION_ID] ")) {
                   const newId = contentValue.substring(18).trim();
                   options.onConversationCreated?.(newId);

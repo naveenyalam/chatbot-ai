@@ -93,5 +93,6 @@ export interface Settings {
   chatRetention: boolean;
   responseStyle: "concise" | "balanced" | "detailed";
   responseTone: "professional" | "friendly" | "technical";
+  language?: "auto" | "en" | "te" | "hi" | "kn" | "ta";
 }
 

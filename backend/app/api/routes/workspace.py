@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, desc, select
 
@@ -38,6 +38,7 @@ class PromptUpdate(BaseModel):
     content: Optional[str] = None
     category: Optional[str] = None
     is_favorite: Optional[bool] = None
+    variables: Optional[List[str]] = None
 
 class SavedResponseCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=150)
@@ -53,6 +54,44 @@ class PreferenceUpdate(BaseModel):
     response_tone: Optional[str] = "professional"
     language: Optional[str] = "en"
     composer_behavior: Optional[str] = "enter_send"
+
+    @field_validator("default_workspace")
+    @classmethod
+    def validate_workspace(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        from app.models.workspace_mode import WorkspaceMode
+        normalized = WorkspaceMode.normalize(v)
+        if normalized is None:
+            raise ValueError(f"Invalid workspace mode '{v}'")
+        return normalized.value
+
+    @field_validator("response_detail")
+    @classmethod
+    def validate_detail(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if v not in ("concise", "balanced", "detailed"):
+            raise ValueError("response_detail must be 'concise', 'balanced', or 'detailed'")
+        return v
+
+    @field_validator("response_tone")
+    @classmethod
+    def validate_tone(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if v not in ("professional", "friendly", "technical"):
+            raise ValueError("response_tone must be 'professional', 'friendly', or 'technical'")
+        return v
+
+    @field_validator("composer_behavior")
+    @classmethod
+    def validate_composer(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if v not in ("enter_send", "ctrl_enter"):
+            raise ValueError("composer_behavior must be 'enter_send' or 'ctrl_enter'")
+        return v
 
 class NotificationMarkRead(BaseModel):
     ids: Optional[List[str]] = None
@@ -423,3 +462,38 @@ def unified_search(
         "prompts": [{"id": p.id, "title": p.title, "type": "prompt"} for p in prompts],
         "saved_responses": [{"id": s.id, "title": s.title, "type": "saved_response"} for s in saved]
     }
+
+
+# --- Workspace Modes Metadata & Validation Endpoints ---
+
+# --- Workspace Modes Metadata & Validation Endpoints ---
+
+@router.get("/workspaces")
+def list_workspace_modes():
+    """List metadata, capabilities, and suggested prompts for all 7 workspace modes."""
+    from app.workspaces import workspace_registry
+    return {"workspaces": [ws.model_dump() if hasattr(ws, "model_dump") else ws.dict() for ws in workspace_registry.list_workspaces()]}
+
+
+@router.get("/workspaces/{workspace_id}")
+def get_workspace_mode_detail(workspace_id: str):
+    """Get metadata details for a specific workspace mode."""
+    from app.workspaces import workspace_registry
+    workspace = workspace_registry.get_workspace(workspace_id)
+    meta = workspace.metadata
+    return meta.model_dump() if hasattr(meta, "model_dump") else meta.dict()
+
+
+@router.post("/workspaces/{workspace_id}/validate")
+def validate_workspace_payload(workspace_id: str, body: dict):
+    """Validate a request payload for a specific workspace mode."""
+    from app.workspaces import workspace_registry, WorkspaceChatRequest
+    workspace = workspace_registry.get_workspace(workspace_id)
+    req = WorkspaceChatRequest(**body)
+    warnings = workspace.validate_request(req)
+    return {
+        "valid": True,
+        "workspace_mode": workspace.mode.value,
+        "warnings": warnings
+    }
+

@@ -15,6 +15,7 @@ class Conversation(Base):
     )
     title = Column(String(200), nullable=False)
     model = Column(String(100), nullable=False, default="nova-intelligence")
+    workspace_mode = Column(String(50), nullable=False, default="general")
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     # Index on updated_at for descending list sorting
     updated_at = Column(

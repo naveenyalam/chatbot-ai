@@ -75,7 +75,7 @@ async def login(
     user = db.query(User).filter(User.email == login_req.email).first()
     if not user or not verify_password(login_req.password, user.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password."
         )
 

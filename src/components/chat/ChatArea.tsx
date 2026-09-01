@@ -200,9 +200,13 @@ export function ChatArea({
     return { thinkingText: null, actualContent: content };
   };
 
-  const formatMessageTime = (isoString: string) => {
+  const formatMessageTime = (isoString?: string) => {
+    if (!isoString) return "";
     try {
       const date = new Date(isoString);
+      if (isNaN(date.getTime())) {
+        return "";
+      }
       return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     } catch {
       return "";

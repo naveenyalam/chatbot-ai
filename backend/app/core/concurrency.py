@@ -34,7 +34,7 @@ async def distributed_lock(lock_name: str, expire_seconds: int = 60, timeout_sec
     Acquires a distributed lock using Redis, falling back to local memory locks.
     """
     redis_client = get_redis_client()
-    lock_key = f"nova:lock:{lock_name}"
+    lock_key = f"nova:{settings.ENV_MODE}:lock:{lock_name}"
     
     if redis_client:
         import uuid

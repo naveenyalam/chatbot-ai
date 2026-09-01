@@ -26,7 +26,9 @@ def run_qa():
     app.dependency_overrides[get_current_user] = lambda: user
 
     print("=== TEST 1: Unconfigured AI Provider Behavior ===")
+    from app.services.model_router import model_router
     ai_service.provider = NotConfiguredProvider()
+    model_router._provider = NotConfiguredProvider()
     res = client.post('/api/chat/stream', json={'messages': [{'role': 'user', 'content': 'Hello'}]})
     assert res.status_code == 200
     lines = [l for l in res.text.split('\n') if l.startswith('data: ')]

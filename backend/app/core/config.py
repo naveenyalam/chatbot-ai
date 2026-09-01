@@ -20,9 +20,13 @@ class Settings(BaseModel):
     RATE_LIMIT_REQUESTS: int = int(os.getenv("RATE_LIMIT_REQUESTS", "60"))
     RATE_LIMIT_WINDOW_SECONDS: int = int(os.getenv("RATE_LIMIT_WINDOW_SECONDS", "60"))
 
-    AI_API_KEY: str | None = os.getenv("AI_API_KEY") or None  # treat empty string as None
-    AI_MODEL: str = os.getenv("AI_MODEL", "gpt-4o-mini")
-    AI_BASE_URL: str = os.getenv("AI_BASE_URL", "https://api.openai.com/v1")
+    # AI Provider Settings
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "ollama").lower()
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1")
+    CLOUD_LLM_API_KEY: str | None = os.getenv("CLOUD_LLM_API_KEY") or None
+    AI_API_KEY: str | None = os.getenv("CLOUD_LLM_API_KEY") or os.getenv("AI_API_KEY") or None  # treat empty string as None
+    AI_MODEL: str = os.getenv("AI_MODEL", "qwen2.5:3b" if os.getenv("LLM_PROVIDER", "ollama").lower() == "ollama" else "gpt-4o-mini")
+    AI_BASE_URL: str = os.getenv("AI_BASE_URL", "http://127.0.0.1:11434/v1" if os.getenv("LLM_PROVIDER", "ollama").lower() == "ollama" else "https://api.openai.com/v1")
     AI_USE_MOCK: bool = os.getenv("AI_USE_MOCK", "false").lower() == "true"
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000,http://localhost:3001")
 
@@ -73,6 +77,8 @@ class Settings(BaseModel):
 
     # Redis Config
     REDIS_TIMEOUT: float = float(os.getenv("REDIS_TIMEOUT", "2.0"))
+    REDIS_CACHE_TTL: int = int(os.getenv("REDIS_CACHE_TTL", "300"))
+
 
     # Rate Limiting — Phase 7 & 8.4 Configurable Limits
     MAX_AGENT_RUNS_PER_MINUTE: int = int(os.getenv("MAX_AGENT_RUNS_PER_MINUTE", "60"))
@@ -101,12 +107,44 @@ class Settings(BaseModel):
     @property
     def ai_is_real(self) -> bool:
         """True only when a valid non-placeholder API key is configured AND mock is not forced."""
-        placeholder_keys = ("", "your_llm_api_key_here", None)
-        return (
-            not self.AI_USE_MOCK
-            and self.AI_API_KEY not in placeholder_keys
-            and bool(self.AI_API_KEY)
+        if self.AI_USE_MOCK:
+            return False
+            
+        if self.LLM_PROVIDER == "ollama":
+            return True
+
+        api_key = self.CLOUD_LLM_API_KEY or self.AI_API_KEY
+        if not api_key:
+            return False
+            
+        key_lower = api_key.lower().strip()
+        
+        # Explicitly accept "ollama"
+        if key_lower == "ollama":
+            return True
+            
+        # Blacklist of specific placeholders and pattern matching
+        placeholder_substrings = ("mock", "dummy", "fake", "placeholder", "test", "local")
+        placeholder_keys = (
+            "", "your_llm_api_key_here", "dummy-local-key", "local-mock-key",
+            "dev-openai-token", "test-key", "fake-key", "mock-key", "placeholder", None
         )
+        
+        # If it's a local Ollama base URL, we permit keys containing "local" but not "mock"/"dummy"/"fake"/"placeholder"
+        if self.AI_BASE_URL and ("127.0.0.1:11434" in self.AI_BASE_URL or "localhost:11434" in self.AI_BASE_URL):
+            if key_lower in placeholder_keys:
+                return False
+            if any(sub in key_lower for sub in ("mock", "dummy", "fake", "placeholder", "test")):
+                return False
+            return True
+            
+        if key_lower in placeholder_keys:
+            return False
+            
+        if any(sub in key_lower for sub in placeholder_substrings):
+            return False
+            
+        return True
 
     @property
     def RAG_RELEVANCE_THRESHOLD(self) -> float:
@@ -146,9 +184,11 @@ class Settings(BaseModel):
             if not self.REDIS_URL:
                 raise ValueError("In production mode, REDIS_URL must be configured.")
             if self.AI_USE_MOCK:
-                raise ValueError("In production mode, AI_USE_MOCK must be false. Configure a real AI_API_KEY.")
-            if not self.AI_API_KEY or self.AI_API_KEY == "your_llm_api_key_here":
-                raise ValueError("In production mode, AI_API_KEY must be set to a valid non-empty LLM provider secret key.")
+                raise ValueError("In production mode, AI_USE_MOCK must be false. Configure a real Cloud LLM Provider.")
+            
+            effective_key = self.CLOUD_LLM_API_KEY or self.AI_API_KEY
+            if self.LLM_PROVIDER != "ollama" and (not effective_key or effective_key in ("your_llm_api_key_here", "local-mock-key", "dummy-local-key")):
+                raise ValueError("In production mode, a valid cloud LLM provider key must be configured in CLOUD_LLM_API_KEY or AI_API_KEY.")
             if "*" in self.cors_origins:
                 raise ValueError("CORS wildcard '*' is not allowed in production mode when credentials are enabled. Explicitly configure FRONTEND_URL.")
         return self

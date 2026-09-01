@@ -159,12 +159,12 @@ def test_readiness_endpoint():
     """
     Verifies that the /readiness endpoint returns 200/503 according to dependencies.
     """
-    # In development/test mode without REDIS_URL, it should return 200 with local-fallback
+    # In development/test mode without REDIS_URL, it should return 200 with local-fallback, or connected if Redis is running
     response = client.get("/readiness")
     assert response.status_code == 200
     assert response.json()["status"] == "healthy"
     assert response.json()["database"] == "ok"
-    assert response.json()["redis"] == "local-fallback"
+    assert response.json()["redis"] in ("local-fallback", "connected")
 
 def test_request_id_generation_and_propagation():
     """

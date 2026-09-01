@@ -28,6 +28,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     chatRetention: true,
     responseStyle: "balanced",
     responseTone: "professional",
+    language: "auto",
   });
   const [mounted, setMounted] = useState(false);
 
@@ -48,6 +49,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const storedRetention = localStorage.getItem("nova-chatRetention");
       const storedStyle = localStorage.getItem("nova-responseStyle") as "concise" | "balanced" | "detailed" | null;
       const storedTone = localStorage.getItem("nova-responseTone") as "professional" | "friendly" | "technical" | null;
+      const storedLanguage = localStorage.getItem("nova-language") as "auto" | "en" | "te" | "hi" | "kn" | "ta" | null;
 
       setTimeout(() => {
         if (storedTheme) {
@@ -63,6 +65,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           chatRetention: storedRetention !== "false",
           responseStyle: storedStyle || "balanced",
           responseTone: storedTone || "professional",
+          language: storedLanguage || "auto",
         });
         setMounted(true);
       }, 0);
@@ -131,7 +134,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSettings((prev) => {
       const updated = { ...prev, [key]: value };
       try {
-        localStorage.setItem(`nova-${String(key).replace("Enabled", "")}`, String(value));
+        let storageKey = `nova-${String(key)}`;
+        if (key === "animationsEnabled") storageKey = "nova-animations";
+        else if (key === "compactMode") storageKey = "nova-compact";
+        else if (key === "soundEffectsEnabled") storageKey = "nova-sound";
+        else if (key === "language") storageKey = "nova-language";
+        localStorage.setItem(storageKey, String(value));
       } catch (e) {
         console.error(e);
       }

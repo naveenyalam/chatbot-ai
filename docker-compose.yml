@@ -7,8 +7,10 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./deploy/certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
       - backend
@@ -37,6 +39,8 @@ services:
     image: redis:7-alpine
     container_name: nova-redis
     restart: always
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -46,6 +50,55 @@ services:
       retries: 5
     networks:
       - nova-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: nova-ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Optional GPU reservation (Uncomment this section in production if using an NVIDIA GPU host)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nova-network
+
+  ollama-pull-model:
+    image: ollama/ollama:latest
+    container_name: nova-ollama-pull
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    networks:
+      - nova-network
+    depends_on:
+      ollama:
+        condition: service_healthy
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      echo 'Waiting for Ollama API to be fully operational...' &&
+      until ollama list >/dev/null 2>&1; do sleep 2; done &&
+      echo 'Ollama is ready. Checking for qwen2.5:3b model...' &&
+      if ! ollama list | grep -q 'qwen2.5:3b'; then
+        echo 'Model qwen2.5:3b not found. Pulling now (this may take a few minutes)...' &&
+        ollama pull qwen2.5:3b &&
+        echo 'Model qwen2.5:3b pulled successfully!';
+      else
+        echo 'Model qwen2.5:3b is already available.';
+      fi
+      "
 
   backend:
     build:
@@ -57,12 +110,12 @@ services:
       - ENV_MODE=${ENV_MODE:-production}
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/nova_ai}
       - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
-      - AI_API_KEY=${AI_API_KEY}
-      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
-      - AI_BASE_URL=${AI_BASE_URL:-https://api.openai.com/v1}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      - AI_API_KEY=${AI_API_KEY:-ollama}
+      - AI_MODEL=${AI_MODEL:-qwen2.5:3b}
+      - AI_BASE_URL=${AI_BASE_URL:-http://ollama:11434/v1}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost,http://localhost:3000,http://localhost:80}
       - SECURE_COOKIES=${SECURE_COOKIES:-false}
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_that_is_at_least_32_characters_long_for_security}
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
@@ -77,6 +130,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -90,11 +145,11 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}
     container_name: nova-frontend
     restart: always
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}
     ports:
       - "3000:3000"
     depends_on:
@@ -154,3 +209,4 @@ volumes:
   backend_storage:
   prometheus_data:
   grafana_data:
+  ollama_data:

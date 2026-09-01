@@ -125,7 +125,10 @@ class TaskAgent(BaseAgent):
             yield {"type": "sources", "value": state.sources}
 
         # Generate final synthesized response
-        system_prompt = NOVA_SYSTEM_PROMPT.strip()
+        from app.services.workspace_prompts import get_multilingual_prompt
+        multilingual_prompt = get_multilingual_prompt(user_msg, state.language)
+
+        system_prompt = f"{multilingual_prompt}\n\n{NOVA_SYSTEM_PROMPT.strip()}"
         if enriched_tool_results:
             tool_context = self._build_tool_context_message(enriched_tool_results)
             system_prompt += (
@@ -140,7 +143,7 @@ class TaskAgent(BaseAgent):
             )
 
         payload = [{"role": "system", "content": system_prompt}] + state.messages
-        async for chunk in model_router.stream(payload, purpose="reasoning", temperature=0.6):
+        async for chunk in model_router.stream(payload, purpose="reasoning", temperature=state.temperature):
             yield {"type": "text", "value": chunk}
 
         # Emit tool activity summary

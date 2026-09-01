@@ -1,0 +1,150 @@
+{
+  "qwen2.5:3b": [
+    {
+      "prompt": "Hi",
+      "ttft_sec": 25.125173330307007,
+      "total_time_sec": 26.265639781951904,
+      "char_len": 34,
+      "est_tokens": 8.5,
+      "tokens_per_second": 0.3236167125782584,
+      "response": "Hello! How can I assist you today?"
+    },
+    {
+      "prompt": "What is the capital of India?",
+      "ttft_sec": 1.3777730464935303,
+      "total_time_sec": 2.6009774208068848,
+      "char_len": 34,
+      "est_tokens": 8.5,
+      "tokens_per_second": 3.268002225626049,
+      "response": "The capital of India is New Delhi."
+    },
+    {
+      "prompt": "Explain Python in 5 points.",
+      "ttft_sec": 1.489642858505249,
+      "total_time_sec": 15.097635507583618,
+      "char_len": 505,
+      "est_tokens": 126.25,
+      "tokens_per_second": 8.362236585760995,
+      "response": "Python is a high-level, interpreted programming language known for its readability and ease of use. Here are 5 key points about Python:\n\n1. **Readability**: Python uses indentation to define code blocks, making the structure of programs more readable and less error-prone.\n2. **Versatility**: It supports multiple programming paradigms, including procedural, object-oriented, and functional programming.\n3. **Interpreted**: Python is an interpreted language, meaning it does not need to be compiled before"
+    },
+    {
+      "prompt": "Explain IoT in simple terms.",
+      "ttft_sec": 1.3286230564117432,
+      "total_time_sec": 9.730848789215088,
+      "char_len": 348,
+      "est_tokens": 87.0,
+      "tokens_per_second": 8.940638364088445,
+      "response": "Internet of Things (IoT) refers to the network of physical devices, vehicles, home appliances, and other items embedded with sensors, software, and connectivity which enable these objects to connect and exchange data. Essentially, it's about connecting everyday objects to the internet, making them smart and capable of collecting and sharing data."
+    },
+    {
+      "prompt": "తెలుగులో Python గురించి 5 పాయింట్లు చెప్పండి.",
+      "ttft_sec": 3.931511163711548,
+      "total_time_sec": 19.795069217681885,
+      "char_len": 68,
+      "est_tokens": 17.0,
+      "tokens_per_second": 0.8587997249746822,
+      "response": "ఈ ప్రశ్నను తెలుగులో వచ్చిన కారణం ఎంపికాలు 5 పాయింట్లు చెప్పడండి:\n\n1."
+    },
+    {
+      "prompt": "हिंदी में Python समझाइए।",
+      "ttft_sec": 1.568507432937622,
+      "total_time_sec": 15.100708246231079,
+      "char_len": 124,
+      "est_tokens": 31.0,
+      "tokens_per_second": 2.0528838445532616,
+      "response": "हिंदी में Python को समझने के लिए, यहाँ आपको एक आसान विधि दी गई है:\n\n1. **सरल वाक्यों का उपयोग**: Python एक सरल भाषा है, जिसम"
+    },
+    {
+      "prompt": "ಕನ್ನಡದಲ್ಲಿ IoT ಬಗ್ಗೆ ವಿವರಿಸಿ.",
+      "ttft_sec": 2.7143394947052,
+      "total_time_sec": 19.268001794815063,
+      "char_len": 95,
+      "est_tokens": 23.75,
+      "tokens_per_second": 1.2326135451363214,
+      "response": " Karnataka sahitye IoT ಬಗ್ಗೆ ವಿವರಿಸಿ:\n\nIoT ಎಂಬ ಮುಖ್ಯವಾದ ಪದವೆಲ್ಲಿ ಮಾಡಲಿಕೆಯ ಮತ್ತು ಸಂಪರ್ಕವಿದ ಪ್ರದೇ"
+    },
+    {
+      "prompt": "தமிழில் AI பற்றி விளக்குங்கள்.",
+      "ttft_sec": 1.9026801586151123,
+      "total_time_sec": 16.478766679763794,
+      "char_len": 89,
+      "est_tokens": 22.25,
+      "tokens_per_second": 1.3502224063481267,
+      "response": "AI என்பது இந்திய மற்றும் இலங்கை மேற்கு நிலையாளர்களுக்கு முறையான தொழில்நுடவ நிலையாளர்களை உ"
+    }
+  ],
+  "qwen2.5:1.5b": [
+    {
+      "prompt": "Hi",
+      "ttft_sec": 0.8204243183135986,
+      "total_time_sec": 2.057302236557007,
+      "char_len": 34,
+      "est_tokens": 8.5,
+      "tokens_per_second": 4.131624342286797,
+      "response": "Hello! How can I assist you today?"
+    },
+    {
+      "prompt": "What is the capital of India?",
+      "ttft_sec": 1.37129807472229,
+      "total_time_sec": 2.541677474975586,
+      "char_len": 34,
+      "est_tokens": 8.5,
+      "tokens_per_second": 3.3442480738362157,
+      "response": "The capital of India is New Delhi."
+    },
+    {
+      "prompt": "Explain Python in 5 points.",
+      "ttft_sec": 1.4374418258666992,
+      "total_time_sec": 15.388672351837158,
+      "char_len": 470,
+      "est_tokens": 117.5,
+      "tokens_per_second": 7.635486500300489,
+      "response": "Python is a high-level, interpreted programming language known for its readability and ease of use. Here are 5 key points about Python:\n\n1. **Readability**: Python uses simple and clear syntax, making it easy to read and understand.\n2. **Interpreted**: Python is an interpreted language, meaning it does not require compilation before execution.\n3. **Versatile**: Python can be used for web development, data science, automation, and more.\n4. **Extensive Libraries**: It"
+    },
+    {
+      "prompt": "Explain IoT in simple terms.",
+      "ttft_sec": 1.402374505996704,
+      "total_time_sec": 10.249366283416748,
+      "char_len": 349,
+      "est_tokens": 87.25,
+      "tokens_per_second": 8.512721429535464,
+      "response": "Internet of Things (IoT) refers to the network of physical devices, vehicles, home appliances, and other items embedded with sensors, software, and connectivity which enables these objects to connect and exchange data. Essentially, it's about connecting everyday objects to the internet, making them smart and capable of collecting and sharing data."
+    },
+    {
+      "prompt": "తెలుగులో Python గురించి 5 పాయింట్లు చెప్పండి.",
+      "ttft_sec": 3.881434202194214,
+      "total_time_sec": 19.296755075454712,
+      "char_len": 66,
+      "est_tokens": 16.5,
+      "tokens_per_second": 0.8550660427352287,
+      "response": "ప్రైటిన్ లో తెలుగు చూపండి. ప్రైటిన్ సులభంగా తెలుగులో చెప్పడండి. కో"
+    },
+    {
+      "prompt": "हिंदी में Python समझाइए।",
+      "ttft_sec": 1.6413922309875488,
+      "total_time_sec": 15.917875051498413,
+      "char_len": 109,
+      "est_tokens": 27.25,
+      "tokens_per_second": 1.711911917378372,
+      "response": "Python एक व्यापक भाषा है जो डाटा विजेटिंग, डिस्काउंट एन्ड, एल्गोरिथ्म विज्ञान और अन्य कई उपयोगी क्षेत्रों में"
+    },
+    {
+      "prompt": "ಕನ್ನಡದಲ್ಲಿ IoT ಬಗ್ಗೆ ವಿವರಿಸಿ.",
+      "ttft_sec": 2.5920724868774414,
+      "total_time_sec": 18.53581929206848,
+      "char_len": 129,
+      "est_tokens": 32.25,
+      "tokens_per_second": 1.7398745365304595,
+      "response": " Karnataka sahitye IoT:\n\nIoT (आरआईटी) Karnataka sahitye Internet of Things ಎಂದು ಹೊಂದುತ್ತದೆ. ಈ ಮೋದದಲ್ಲಿ ಹಾಗೆಯಲ್ಲಿ ಮತ್ತು ಹಾಗೆಯಿಂದ ಸ"
+    },
+    {
+      "prompt": "தமிழில் AI பற்றி விளக்குங்கள்.",
+      "ttft_sec": 2.3353183269500732,
+      "total_time_sec": 16.095492839813232,
+      "char_len": 115,
+      "est_tokens": 28.75,
+      "tokens_per_second": 1.7862143325543305,
+      "response": "AI (Artificial Intelligence) என்பது மாறிலியல் நிலையில் உள்ள ஒரு பகுதி சிறந்த நிலையான பயன்பாடுகள் மற்றும் தொழில் நில"
+    }
+  ]
+}

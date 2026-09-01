@@ -1,0 +1,24 @@
+
+=== Testing English ===
+Prompt: What is artificial intelligence?
+Response: Artificial intelligence (AI) refers to the development of computer systems that can perform tasks that typically require human intelligence, such as learning, problem-solving, decision-making, and perception. These systems are designed to mimic the capabilities of humans, but with the aid of algorithms and data.
+
+AI can be categorized into several types, including:
+
+1. Narrow or Weak AI: This type of AI is designed to perform a specific task, such as facial recognition or language translation. It is not capable of general intelligence
+
+=== Testing Telugu ===
+Prompt: కృత్రిమ మేధస్సు అంటే ఏమిటి?
+Response: కృత్రిమ మేధస్సు అనేది పరిశోధన, పరిశోధన ప్రక్రియలో కీలకమై
+
+=== Testing Hindi ===
+Prompt: कृत्रिम बुद्धिमत्ता क्या है?
+Response: कृत्रिम बुद्धिमत्ता एक प्रकार की मानव बुद्धिमत्ता है जो कंप्यूटर और मानव दोनों में समान है। यह एक प्रौद्योगिकी है जो मानव की सोच, व्यवहार और निर्णय लेने की प्रक्रिया को स्वचालित करने की क्षमता रखत
+
+=== Testing Kannada ===
+Prompt: ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ ಎಂದರೇನು?
+Response: ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ ಅನ್ನಂತರ ಹೆಚ್ಚು ಪ್ರಸಿದ್ಧರಾದ ಪ್ರಾಚೀನ ಭಾರತ
+
+=== Testing Tamil ===
+Prompt: செயற்கை நுண்ணறிவு என்றால் என்ன?
+Response: செயற்கை நுண்ணறிவு என்பது ஒரு தனிமானத்தை வளர்க்கும் மற்றும் செயல்படுத்துவத

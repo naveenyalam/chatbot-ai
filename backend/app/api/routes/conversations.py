@@ -23,7 +23,7 @@ general_limiter = RateLimiter(
 
 router = APIRouter(dependencies=[Depends(general_limiter)])
 
-@router.get("", response_model=List[ConversationResponse])
+@router.get("", response_model=None)
 async def list_conversations(
     response: Response,
     limit: int = 20,
@@ -36,6 +36,20 @@ async def list_conversations(
     Sorted in descending order of last activity (updated_at DESC).
     Prefetches relations via joinedload and paginates via cursor.
     """
+    import json
+    from app.core.redis import cache_get, cache_set
+    cache_key = f"nova:{settings.ENV_MODE}:user:{current_user.id}:conversations_list:{limit}:{cursor or 'none'}"
+    cached = cache_get(cache_key)
+    if cached:
+        try:
+            data = json.loads(cached)
+            if isinstance(data, dict) and "results" in data:
+                if data.get("next_cursor"):
+                    response.headers["X-Next-Cursor"] = data["next_cursor"]
+                return data["results"]
+        except Exception:
+            pass
+
     query = db.query(Conversation).options(joinedload(Conversation.user)).filter(
         Conversation.user_id == current_user.id
     )
@@ -50,7 +64,24 @@ async def list_conversations(
     if next_cursor:
         response.headers["X-Next-Cursor"] = next_cursor
         
-    return paginated_results
+    serialized_results = []
+    for conv in paginated_results:
+        serialized_results.append({
+            "id": conv.id,
+            "user_id": conv.user_id,
+            "title": conv.title,
+            "model": conv.model,
+            "workspace_mode": conv.workspace_mode,
+            "created_at": conv.created_at.isoformat() if conv.created_at else None,
+            "updated_at": conv.updated_at.isoformat() if conv.updated_at else None
+        })
+        
+    cache_data = {
+        "results": serialized_results,
+        "next_cursor": next_cursor
+    }
+    cache_set(cache_key, json.dumps(cache_data), ttl_seconds=settings.REDIS_CACHE_TTL)
+    return serialized_results
 
 @router.post("", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
 async def create_conversation(
@@ -75,6 +106,10 @@ async def create_conversation(
         db.commit()
         db.refresh(new_conv)
 
+        # Invalidate conversation list cache
+        from app.core.redis import cache_delete_pattern
+        cache_delete_pattern(f"nova:{settings.ENV_MODE}:user:{current_user.id}:conversations_list:*")
+
         logger.info(f"Created conversation {new_conv.id} for user {current_user.id}")
         return new_conv
     except Exception as exc:
@@ -84,6 +119,7 @@ async def create_conversation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to initialize new conversation."
         )
+
 
 @router.get("/search", response_model=List[ConversationResponse])
 async def search_conversations(
@@ -164,6 +200,8 @@ async def generate_conversation_title(
             conv.title = clean_title[:80]
             db.commit()
             db.refresh(conv)
+            from app.core.redis import cache_delete_pattern
+            cache_delete_pattern(f"nova:{settings.ENV_MODE}:user:{current_user.id}:conversations_list:*")
     except Exception as exc:
         logger.warning(f"AI title generation failed for conv {id}: {exc}")
         
@@ -217,6 +255,8 @@ async def rename_conversation(
         conv.title = rename_req.title
         db.commit()
         db.refresh(conv)
+        from app.core.redis import cache_delete_pattern
+        cache_delete_pattern(f"nova:{settings.ENV_MODE}:user:{current_user.id}:conversations_list:*")
         logger.info(f"Renamed conversation {conv.id} to '{conv.title}'")
         return conv
     except Exception as exc:
@@ -246,6 +286,8 @@ async def delete_conversation(
     try:
         db.delete(conv)
         db.commit()
+        from app.core.redis import cache_delete_pattern
+        cache_delete_pattern(f"nova:{settings.ENV_MODE}:user:{current_user.id}:conversations_list:*")
         logger.info(f"Deleted conversation {id} for user {current_user.id}")
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except Exception as exc:

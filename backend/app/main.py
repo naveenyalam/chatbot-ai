@@ -25,7 +25,18 @@ async def lifespan(app: FastAPI):
     setup_logging()
     
     logger.info("NOVA AI Core API starting up...")
+    from app.db.database import ensure_db_migrations
+    ensure_db_migrations()
     
+    # Initialize RedisService and check health
+    from app.services.redis_service import RedisService
+    RedisService.initialize()
+    redis_connected = await RedisService.ping()
+    if redis_connected:
+        logger.info("Redis connected successfully")
+    else:
+        logger.warning("Redis unavailable")
+
     # Start background job worker
     from app.core.jobs import run_worker_in_background, stop_worker, register_job_handler
     
@@ -33,8 +44,9 @@ async def lifespan(app: FastAPI):
         from app.db.database import SessionLocal
         from app.services.document_service import process_document_in_background
         doc_id = payload.get("document_id")
-        with SessionLocal() as db_session:
-            await process_document_in_background(db_session, doc_id)
+        if doc_id is not None:
+            with SessionLocal() as db_session:
+                await process_document_in_background(db_session, str(doc_id))
 
     register_job_handler("process_document", process_document_job)
     run_worker_in_background()
@@ -80,13 +92,11 @@ async def lifespan(app: FastAPI):
         
     # Graceful Redis client pool shutdown
     try:
-        from app.core.redis import get_redis_client
-        client = get_redis_client()
-        if client:
-            client.close()
-            logger.info("Redis connection pool closed gracefully.")
+        from app.services.redis_service import RedisService
+        await RedisService.close()
     except Exception as redis_err:
         logger.error(f"Error closing Redis connections: {redis_err}")
+
 
     # Graceful background tasks cleanup
     try:
@@ -229,10 +239,16 @@ async def http_exception_handler(request: Request, exc: HTTPException):
                 "message": detail_dict.get("message") or "HTTP exception occurred.",
                 "request_id": request_id
             }
-        else:
+        elif isinstance(detail_dict["error"], dict):
             detail_dict["error"]["request_id"] = request_id
+        elif isinstance(detail_dict["error"], str):
+            detail_dict["error"] = {
+                "code": detail_dict["error"],
+                "message": detail_dict.get("message") or "HTTP exception occurred.",
+                "request_id": request_id
+            }
         if "detail" not in detail_dict:
-            detail_dict["detail"] = detail_dict.get("message") or "HTTP exception occurred."
+            detail_dict["detail"] = detail_dict.get("message") or exc.detail
         return JSONResponse(status_code=exc.status_code, content=detail_dict, headers=exc.headers)
         
     return JSONResponse(
@@ -242,7 +258,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             "detail": exc.detail,
             "error": {
                 "code": "HTTP_EXCEPTION",
-                "message": str(exc.detail),
+                "message": exc.detail,
                 "request_id": request_id
             }
         }
@@ -272,10 +288,12 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(conversations.router, prefix="/api/conversations", tags=["Conversations"])
 app.include_router(documents.router, prefix="/api", tags=["Documents"])
 app.include_router(workspace.router, prefix="/api", tags=["Workspace"])
+from app.workspaces import workspace_router
+app.include_router(workspace_router, prefix="/api", tags=["Workspaces Engine"])
 
 def _safe_provider_status() -> dict:
     """Return safe AI provider status without exposing credentials."""
-    ai_key_configured = bool(settings.AI_API_KEY and settings.AI_API_KEY.strip() not in ("", "your_llm_api_key_here"))
+    ai_key_configured = settings.ai_is_real
     return {
         "configured": ai_key_configured,
         "mode": "real" if ai_key_configured else "mock",
@@ -285,20 +303,70 @@ def _safe_provider_status() -> dict:
 
 @app.get("/health")
 async def health():
-    """Simple check that application process is alive. Includes safe AI provider status."""
+    """Simple check that application process is alive. Includes safe AI provider status and services check."""
+    from app.services.redis_service import RedisService
+    from app.db.database import SessionLocal
+    
+    redis_connected = await RedisService.ping()
+    redis_status = "connected" if redis_connected else "unavailable"
+    
+    db_status = "connected"
+    try:
+        with SessionLocal() as db_session:
+            db_session.execute(text("SELECT 1"))
+    except Exception:
+        db_status = "unavailable"
+
+    ai_configured = settings.ai_is_real
+    ai_info = {"configured": ai_configured}
+    if ai_configured:
+        ai_info["provider"] = "openai-compatible"
+        ai_info["model"] = settings.AI_MODEL
+
     return {
         "status": "ok",
         "service": "nova-ai-backend",
+        "ai": ai_info,
+        "redis": redis_status,
         "ai_provider": _safe_provider_status(),
+        "services": {
+            "redis": redis_status,
+            "database": db_status
+        }
     }
 
 @app.get("/api/health")
 async def api_health():
-    """Secondary API health endpoint with AI provider status."""
+    """Secondary API health endpoint with AI provider status and services check."""
+    from app.services.redis_service import RedisService
+    from app.db.database import SessionLocal
+    
+    redis_connected = await RedisService.ping()
+    redis_status = "connected" if redis_connected else "unavailable"
+    
+    db_status = "connected"
+    try:
+        with SessionLocal() as db_session:
+            db_session.execute(text("SELECT 1"))
+    except Exception:
+        db_status = "unavailable"
+
+    ai_configured = settings.ai_is_real
+    ai_info = {"configured": ai_configured}
+    if ai_configured:
+        ai_info["provider"] = "openai-compatible"
+        ai_info["model"] = settings.AI_MODEL
+
     return {
         "status": "ok",
         "service": "nova-ai-backend",
+        "ai": ai_info,
+        "redis": redis_status,
         "ai_provider": _safe_provider_status(),
+        "services": {
+            "redis": redis_status,
+            "database": db_status
+        }
     }
 
 @app.get("/api/provider-status")
@@ -339,20 +407,22 @@ async def readiness(db: Session = Depends(get_db)):
         except Exception:
             pass
 
-    redis_status = "ok"
-    try:
-        from app.core.redis import get_redis_client
-        client = get_redis_client()
-        if client:
-            client.ping()
+    redis_status = "connected"
+    from app.services.redis_service import RedisService
+    is_connected = await RedisService.ping()
+    if is_connected:
+        redis_status = "connected"
+    else:
+        if settings.ENV_MODE == "production":
+            redis_status = "error"
         else:
-            if settings.ENV_MODE == "production":
-                redis_status = "error"
-            else:
-                redis_status = "local-fallback"
-    except Exception as exc:
-        logger.error(f"Readiness check failed - Redis error: {exc}")
-        redis_status = "error"
+            redis_status = "local-fallback"
+
+    ai_configured = settings.ai_is_real
+    ai_info = {"configured": ai_configured}
+    if ai_configured:
+        ai_info["provider"] = "openai-compatible"
+        ai_info["model"] = settings.AI_MODEL
 
     if db_status == "error" or redis_status == "error":
         raise HTTPException(
@@ -360,12 +430,15 @@ async def readiness(db: Session = Depends(get_db)):
             detail={
                 "status": "unhealthy",
                 "database": db_status,
-                "redis": redis_status
+                "redis": redis_status,
+                "ai": ai_info
             }
         )
 
     return {
         "status": "healthy",
         "database": db_status,
-        "redis": redis_status
+        "redis": redis_status,
+        "ai": ai_info
     }
+

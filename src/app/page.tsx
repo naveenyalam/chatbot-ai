@@ -35,10 +35,16 @@ import { useToast } from "@/components/ui/Toast";
 import { listDocuments, DocumentResponse } from "@/lib/api/documents";
 import { Sparkles } from "lucide-react";
 
-const generateId = (prefix: string) => `${prefix}-${Date.now()}`;
+const generateId = (prefix: string) => {
+  if (typeof window !== "undefined" && window.crypto && window.crypto.randomUUID) {
+    return `${prefix}-${window.crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+};
 const getIsoString = () => new Date().toISOString();
 
 export default function Home() {
+  const { settings } = useApp();
   const router = useRouter();
   const toast = useToast();
   
@@ -204,16 +210,20 @@ export default function Home() {
   async function loadConversations() {
     try {
       const list = await listConversations();
-      const mapped = list.map((c) => ({
-        id: c.id,
-        title: c.title,
-        createdAt: c.created_at,
-        messages: [],
-      }));
-      setChats(mapped);
+      setChats((prevChats) => {
+        return list.map((c) => {
+          const existing = prevChats.find((exist) => exist.id === c.id);
+          return {
+            id: c.id,
+            title: c.title,
+            createdAt: c.created_at,
+            messages: existing ? existing.messages : [],
+          };
+        });
+      });
 
-      if (mapped.length > 0 && !activeChatId) {
-        handleSelectChat(mapped[0].id);
+      if (list.length > 0 && !activeChatId) {
+        handleSelectChat(list[0].id);
       }
     } catch (err) {
       console.error("Failed to load user conversations:", err);
@@ -373,6 +383,11 @@ export default function Home() {
       conversation_id: backendConvId,
       document_ids: docIdsToPass || (selectedDocIds.length > 0 ? selectedDocIds : undefined),
       mode: selectedTool || activeView || "chat",
+      response_style: settings.responseStyle,
+      response_tone: settings.responseTone,
+      semantic_chunk_limit: settings.semanticChunkLimit,
+      similarity_filtering: settings.similarityFiltering,
+      language: settings.language,
       onSources: (sources) => {
         setChats((prevChats) =>
           prevChats.map((c) =>
@@ -596,7 +611,9 @@ export default function Home() {
       },
       onError: (err) => {
         setIsLoading(false);
-        const friendlyMessage = err.message.includes("401") || err.message.includes("403")
+        const friendlyMessage = err.message.includes("AI provider") || err.message.includes("not configured")
+          ? err.message
+          : err.message.includes("401") || err.message.includes("403")
           ? "Your session has expired. Please sign in again."
           : err.message.includes("Failed to fetch") || err.message.includes("NetworkError")
           ? "Unable to connect to NOVA AI. Check your connection and try again."

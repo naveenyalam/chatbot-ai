@@ -1,0 +1,142 @@
+[
+  {
+    "prompt": "hi",
+    "actual_response": "Hello! I am NOVA, your AI assistant. How can I help you today?",
+    "duration_seconds": 1.273,
+    "events_count": 15,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What is Python?",
+    "actual_response": "Python is a high-level, interpreted programming language known for its readability, simplicity, and versatility. It supports multiple programming paradigms and has a large ecosystem of libraries.",
+    "duration_seconds": 1.834,
+    "events_count": 28,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What is 25 * 4?",
+    "actual_response": "25 * 4 is 100.",
+    "duration_seconds": 2.832,
+    "events_count": 7,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Write a Python function to calculate factorial.",
+    "actual_response": "```python\ndef factorial(n):\n    if n <= 1:\n        return 1\n    return n * factorial(n - 1)\n```",
+    "duration_seconds": 3.17,
+    "events_count": 29,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Explain REST API in simple terms.",
+    "actual_response": "A REST API is like a waiter in a restaurant. You (the client) order food (data) from the menu (endpoints), the waiter takes your order to the kitchen (server), and brings back your food (response).",
+    "duration_seconds": 4.135,
+    "events_count": 37,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Give me 5 advantages of Redis.",
+    "actual_response": "1. Extremely fast in-memory performance.\n2. Rich data structures (strings, hashes, lists, sets, sorted sets).\n3. Built-in replication and persistence options.\n4. High availability with Redis Sentinel/Cluster.\n5. Pub/Sub and caching primitives.",
+    "duration_seconds": 1.691,
+    "events_count": 30,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What is the capital of France?",
+    "actual_response": "The capital of France is Paris.",
+    "duration_seconds": 3.084,
+    "events_count": 8,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Summarize this text: \"Artificial intelligence allows computers to perform tasks that normally require human intelligence.\"",
+    "actual_response": "I received your message: 'Summarize this text: \"Artificial intelligence allows computers to perform tasks that normally require human intelligence.\"'. How can I assist you further?",
+    "duration_seconds": 1.56,
+    "events_count": 27,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Write a Java program to reverse a string.",
+    "actual_response": "```java\npublic class ReverseString {\n    public static void main(String[] args) {\n        String original = \"Hello\";\n        String reversed = new StringBuilder(original).reverse().toString();\n        System.out.println(reversed);\n    }\n}\n```",
+    "duration_seconds": 4.335,
+    "events_count": 50,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Explain recursion with an example.",
+    "actual_response": "Recursion is when a function calls itself. For example, a Russian nesting doll: to open the doll, you open it to find a smaller doll inside, repeating until you find the smallest doll which has no dolls inside.",
+    "duration_seconds": 1.868,
+    "events_count": 40,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What framework does the backend use?",
+    "actual_response": "Project NOVA's backend uses FastAPI.",
+    "duration_seconds": 0.974,
+    "events_count": 7,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What port does Redis use?",
+    "actual_response": "Redis runs on port 6379.",
+    "duration_seconds": 1.041,
+    "events_count": 7,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Which frontend framework is used?",
+    "actual_response": "The frontend uses Next.js.",
+    "duration_seconds": 1.131,
+    "events_count": 6,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What is the capital of Spain?",
+    "actual_response": "The capital of Spain is Madrid.",
+    "duration_seconds": 1.305,
+    "events_count": 8,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Who wrote Romeo and Juliet?",
+    "actual_response": "William Shakespeare wrote Romeo and Juliet.",
+    "duration_seconds": 1.007,
+    "events_count": 8,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What is 10 + 15?",
+    "actual_response": "10 + 15 is 25.",
+    "duration_seconds": 1.017,
+    "events_count": 7,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Explain dark mode.",
+    "actual_response": "Dark mode is a low-light user interface design that uses dark background colors, reducing eye strain in dark environments.",
+    "duration_seconds": 3.108,
+    "events_count": 21,
+    "status": "PASS"
+  },
+  {
+    "prompt": "Write a JavaScript arrow function.",
+    "actual_response": "```javascript\nconst add = (a, b) => a + b;\n```",
+    "duration_seconds": 2.718,
+    "events_count": 11,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What is the speed of light?",
+    "actual_response": "The speed of light is approximately 299,792 kilometers per second (186,282 miles per second).",
+    "duration_seconds": 2.95,
+    "events_count": 16,
+    "status": "PASS"
+  },
+  {
+    "prompt": "What is SQL?",
+    "actual_response": "SQL stands for Structured Query Language, used for managing and querying relational databases.",
+    "duration_seconds": 1.199,
+    "events_count": 15,
+    "status": "PASS"
+  }
+]

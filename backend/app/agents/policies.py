@@ -15,12 +15,17 @@ logger = logging.getLogger("nova-ai.agents.policy")
 
 # Per-agent tool allowlists — agents CANNOT use tools not in their list
 AGENT_TOOL_POLICIES: dict[str, Set[str]] = {
-    "normal":   {"calculator"},
-    "chat":     {"calculator"},
-    "research": {"web_search", "document_search"},
-    "document": {"document_search"},
-    "task":     {"calculator", "web_search", "document_search", "code_execution"},
-    "agent":    {"calculator", "web_search", "document_search", "code_execution"},
+    "normal":        {"calculator"},
+    "general":       {"calculator"},
+    "chat":          {"calculator"},
+    "research":      {"web_search", "document_search"},
+    "writing":       {"calculator"},
+    "coding":        {"calculator", "code_execution"},
+    "documents":     {"document_search"},
+    "document":      {"document_search"},
+    "data-analysis": {"calculator", "code_execution"},
+    "agent":         {"calculator", "web_search", "document_search", "code_execution"},
+    "task":          {"calculator", "web_search", "document_search", "code_execution"},
 }
 
 

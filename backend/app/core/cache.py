@@ -3,6 +3,8 @@ import logging
 from typing import Any, Optional
 from cachetools import TTLCache
 from app.core.redis import get_redis_client
+from app.core.config import settings
+
 from app.core.metrics import (
     REDIS_CACHE_HITS_TOTAL,
     REDIS_CACHE_MISSES_TOTAL,
@@ -29,7 +31,8 @@ class NovaCache:
 
     @staticmethod
     def _get_key(namespace: str, key: str) -> str:
-        return f"nova:cache:{namespace}:{key}"
+        return f"nova:{settings.ENV_MODE}:cache:{namespace}:{key}"
+
 
     @classmethod
     def get(cls, namespace: str, key: str) -> Optional[Any]:

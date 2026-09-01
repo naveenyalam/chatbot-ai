@@ -61,7 +61,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full bg-background text-foreground flex flex-col overflow-hidden">
+      <body
+        className="min-h-full bg-background text-foreground flex flex-col overflow-hidden"
+        suppressHydrationWarning
+      >
         <AppProvider>
           <ToastProvider>
             <ErrorBoundary>

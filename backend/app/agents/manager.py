@@ -55,15 +55,17 @@ def _check_rate_limit(cache_key: str, user_id: str, limit: int) -> bool:
 
 def _select_agent(mode: str, document_ids: List[str]) -> "BaseAgent":
     """Select and instantiate the right agent for the given mode."""
-    mode_clean = (mode or "normal").lower()
-    if mode_clean in ("research", "deep_research"):
+    from app.models.workspace_mode import WorkspaceMode
+    norm = WorkspaceMode.normalize(mode) or WorkspaceMode.GENERAL
+
+    if norm == WorkspaceMode.RESEARCH:
         return ResearchAgent()
-    if mode_clean in ("documents", "document", "document_search", "rag"):
+    if norm == WorkspaceMode.DOCUMENTS:
         return DocumentAgent(document_ids=document_ids)
-    if mode_clean in ("task", "agent", "agents"):
+    if norm == WorkspaceMode.AGENT:
         return TaskAgent(document_ids=document_ids)
-    # Default: chat agent with workspace mode context
-    return ChatAgent(mode=mode_clean)
+
+    return ChatAgent(mode=norm.value)
 
 
 
@@ -83,7 +85,12 @@ class AgentManager:
         document_ids: List[str],
         model_alias: Optional[str],
         temperature: float,
-        db: Session
+        db: Session,
+        response_style: Optional[str] = None,
+        response_tone: Optional[str] = None,
+        semantic_chunk_limit: Optional[int] = None,
+        similarity_filtering: Optional[bool] = None,
+        language: Optional[str] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         # Rate limit check
         if not _check_rate_limit("agent_runs", user_id, settings.MAX_AGENT_RUNS_PER_MINUTE):
@@ -109,7 +116,13 @@ class AgentManager:
                 conversation_id=conversation_id,
                 mode=resolved_mode,
                 messages=messages,
-                started_at=datetime.utcnow()
+                started_at=datetime.utcnow(),
+                response_style=response_style,
+                response_tone=response_tone,
+                semantic_chunk_limit=semantic_chunk_limit,
+                similarity_filtering=similarity_filtering,
+                language=language,
+                temperature=temperature
             )
 
             # Persist AgentRun record

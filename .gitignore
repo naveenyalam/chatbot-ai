@@ -47,6 +47,10 @@ next-env.d.ts
 lint_output.txt
 backend/venv/
 backend/.venv/
+backend/venv_new/
 .venv/
 backend/storage/
+*.exe
+dump.rdb
+
 

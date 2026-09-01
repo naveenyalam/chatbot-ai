@@ -61,6 +61,13 @@ async def process_document_in_background(db: Session, document_id: str):
 
     doc.status = "processing"
     db.commit()
+    try:
+        from app.core.config import settings
+        from app.core.redis import cache_delete
+        cache_delete(f"nova:{settings.ENV_MODE}:user:{doc.user_id}:documents_list")
+        cache_delete(f"nova:{settings.ENV_MODE}:user:{doc.user_id}:document_status:{doc.id}")
+    except Exception as e:
+        print(f"Failed to invalidate document cache: {e}")
 
     try:
         if not os.path.exists(doc.storage_path):
@@ -107,10 +114,24 @@ async def process_document_in_background(db: Session, document_id: str):
 
         doc.status = "indexed"
         db.commit()
+        try:
+            from app.core.config import settings
+            from app.core.redis import cache_delete
+            cache_delete(f"nova:{settings.ENV_MODE}:user:{doc.user_id}:documents_list")
+            cache_delete(f"nova:{settings.ENV_MODE}:user:{doc.user_id}:document_status:{doc.id}")
+        except Exception as e:
+            print(f"Failed to invalidate document cache: {e}")
         print(f"Successfully indexed document {doc.original_filename} ({len(chunks_data)} chunks)")
 
     except Exception as err:
         db.rollback()
         doc.status = "failed"
         db.commit()
+        try:
+            from app.core.config import settings
+            from app.core.redis import cache_delete
+            cache_delete(f"nova:{settings.ENV_MODE}:user:{doc.user_id}:documents_list")
+            cache_delete(f"nova:{settings.ENV_MODE}:user:{doc.user_id}:document_status:{doc.id}")
+        except Exception as e:
+            print(f"Failed to invalidate document cache: {e}")
         print(f"Failed to process document {document_id}: {err}")

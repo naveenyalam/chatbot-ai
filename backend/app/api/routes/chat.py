@@ -75,38 +75,37 @@ async def stream_chat(
                 detail="Failed to initialize chat session."
             )
 
-    # 2. Save user message
-    last_msg = chat_req.messages[-1]
-    try:
-        user_msg = Message(
-            conversation_id=conv.id,
-            role=last_msg.role,
-            content=last_msg.content,
-            status="complete"
-        )
-        db.add(user_msg)
-        db.commit()
-        db.refresh(user_msg)
-    except Exception as exc:
-        db.rollback()
-        logger.error(f"[{request_id}] Failed to save user message: {exc}")
+    # 2. Save/sync user message
+    if chat_req.messages:
+        from app.services.message_sync import sync_conversation_messages
+        try:
+            sync_conversation_messages(db, conv.id, chat_req.messages)
+        except Exception as exc:
+            logger.error(f"[{request_id}] Failed to sync user messages: {exc}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to synchronize conversation history."
+            )
+    else:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to save message."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Messages list cannot be empty."
         )
 
-    # 3. Load recent history for context
+
+    # 3. Load recent history for context (up to 30 messages)
     db_messages = db.query(Message).filter(
         Message.conversation_id == conv.id
-    ).order_by(Message.created_at.desc()).limit(settings.MAX_CONTEXT_MESSAGES).all()
+    ).order_by(Message.created_at.desc()).limit(30).all()
     # Reverse to restore chronological order
     db_messages.reverse()
 
-    from app.core.context import truncate_context_messages
+    from app.core.context import truncate_context_messages, compress_old_messages
     ai_history = [
         {"role": m.role, "content": m.content}
         for m in db_messages
     ]
+    ai_history = compress_old_messages(ai_history, keep_full_count=4)
     ai_history = truncate_context_messages(ai_history, max_chars=settings.MAX_TOKENS_PER_REQUEST * 4)
 
     async def event_generator():
@@ -118,19 +117,25 @@ async def stream_chat(
             # Yield conversation ID first so frontend can bind state
             yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv.id})}\n\n"
 
-            from app.agents.manager import agent_manager
+            from app.services.workspace_service import workspace_service
 
-            resolved_mode = chat_req.workspace_mode or chat_req.mode or "normal"
-            async for event in agent_manager.execute(
+            resolved_mode = chat_req.workspace_mode or chat_req.mode or "general"
+            async for event in workspace_service.execute_workspace_chat(
                 request_id=request_id,
                 user_id=current_user.id,
                 conversation_id=conv.id,
                 messages=ai_history,
-                mode=resolved_mode,
+                workspace_mode_raw=resolved_mode,
                 document_ids=chat_req.document_ids or [],
+                attachments=chat_req.attachments,
                 model_alias=chat_req.model,
                 temperature=chat_req.temperature,
-                db=db
+                db=db,
+                response_style=chat_req.response_style,
+                response_tone=chat_req.response_tone,
+                semantic_chunk_limit=chat_req.semantic_chunk_limit,
+                similarity_filtering=chat_req.similarity_filtering,
+                language=chat_req.language
             ):
                 if await request.is_disconnected():
                     logger.warning(f"[{request_id}] Client disconnected — stopping stream.")
@@ -152,11 +157,13 @@ async def stream_chat(
                 UsageBudget.record_request(current_user.id, len(assistant_content) // 4)
                 try:
                     with SessionLocal() as db_new:
+                        from datetime import datetime
                         assistant_msg = Message(
                             conversation_id=conv.id,
                             role="assistant",
                             content=assistant_content,
-                            status="complete"
+                            status="complete",
+                            created_at=datetime.utcnow()
                         )
                         db_new.add(assistant_msg)
                         db_new.flush()
@@ -196,10 +203,7 @@ async def stream_chat(
 
             # Surface AI provider configuration errors clearly to the frontend
             if "AI_PROVIDER_NOT_CONFIGURED" in err_str:
-                user_message = (
-                    "⚠️ No AI provider is configured. "
-                    "Please set AI_API_KEY in backend/.env and restart the backend server."
-                )
+                user_message = "AI provider is not configured. Add a valid AI API key in backend/.env and restart NOVA AI."
                 yield f"data: {json.dumps({'type': 'error', 'code': 'AI_PROVIDER_NOT_CONFIGURED', 'value': user_message})}\n\n"
             else:
                 yield f"data: {json.dumps({'type': 'error', 'value': 'An unexpected error occurred. Please try again.'})}\n\n"

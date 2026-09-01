@@ -28,6 +28,14 @@ class OpenAICompatibleProvider(BaseLLMProvider):
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.circuit_breaker = CircuitBreaker("openai")
+        self._client = None
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=30.0)
+            limits = httpx.Limits(max_keepalive_connections=10, max_connections=20)
+            self._client = httpx.AsyncClient(timeout=timeout, limits=limits)
+        return self._client
 
     async def stream(
         self,
@@ -44,6 +52,9 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json"
             }
+            if "openrouter.ai" in self.base_url or settings.LLM_PROVIDER == "openrouter":
+                headers["HTTP-Referer"] = settings.FRONTEND_URL.split(",")[0]
+                headers["X-Title"] = "NOVA AI"
             
             payload = {
                 "model": model,
@@ -52,9 +63,17 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                 "stream": True
             }
 
+            import os
+            max_tokens_val = os.getenv("MAX_GENERATION_TOKENS")
+            if max_tokens_val:
+                payload["max_tokens"] = int(max_tokens_val)
+
+            # For local Ollama instances, keep the model loaded to prevent load latency on subsequent calls
+            if "localhost" in self.base_url or "127.0.0.1" in self.base_url:
+                payload["keep_alive"] = -1
+
             url = f"{self.base_url}/chat/completions"
-            timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=8.0)
-            client = httpx.AsyncClient(timeout=timeout)
+            client = await self._get_client()
             
             response = None
             success = False
@@ -64,6 +83,12 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                 # Check circuit breaker for each retry attempt
                 self.circuit_breaker.check_call()
                 try:
+                    prompt_len = sum(len(m.get("content", "")) for m in messages)
+                    logger.info(
+                        f"dispatch_request: provider=OpenAI-compatible, model={model}, "
+                        f"prompt_length={prompt_len}, base_url={self.base_url}"
+                    )
+                    logger.info(f"DEBUG PAYLOAD: {[{'role': m.get('role'), 'len': len(m.get('content', '')), 'preview': m.get('content', '')[:60]} for m in messages]}")
                     logger.info(f"Dispatching POST request to {url} with model {model} (Attempt {attempt}/{max_retries})")
                     response = await client.send(
                         client.build_request("POST", url, headers=headers, json=payload),
@@ -88,18 +113,14 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                     
                     # Retry only on 429 and 5xx errors
                     if response.status_code in (401, 403):
-                        await client.aclose()
                         raise AIProviderAuthError(err_msg)
                     elif response.status_code == 429:
                         if attempt == max_retries:
-                            await client.aclose()
                             raise AIProviderRateLimitError(err_msg)
                     elif response.status_code in (500, 502, 503, 504):
                         if attempt == max_retries:
-                            await client.aclose()
                             raise AIProviderUnavailableError(err_msg)
                     else:
-                        await client.aclose()
                         raise AIServiceError(f"AI Provider returned HTTP {response.status_code}: {err_msg}")
                         
                 except (httpx.TimeoutException, httpx.ConnectError, httpx.ConnectTimeout, httpx.NetworkError, asyncio.TimeoutError) as exc:
@@ -115,7 +136,6 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                     LLM_RETRY_TOTAL.labels(provider="openai", model=model, error_type=error_type).inc()
                     
                     if attempt == max_retries:
-                        await client.aclose()
                         raise AIProviderUnavailableError(f"AI Provider endpoint is unreachable: {exc}") from exc
                 
                 # Backoff delay with jitter
@@ -144,9 +164,7 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                                 pass
                 finally:
                     await response.aclose()
-                    await client.aclose()
             else:
-                await client.aclose()
                 raise RuntimeError("Failed to establish stream connection with AI Provider.")
 
 
@@ -172,7 +190,8 @@ from app.core.errors import AIProviderNotConfiguredError, AIProviderAuthError, A
 
 class NotConfiguredProvider(BaseLLMProvider):
     """
-    Yields helpful setup instructions when no AI provider key is configured.
+    Raises a clear AIProviderNotConfiguredError when no AI provider key is configured.
+    Never silently generates fake answers.
     """
     async def stream(
         self,
@@ -180,17 +199,8 @@ class NotConfiguredProvider(BaseLLMProvider):
         model: str,
         temperature: float
     ) -> AsyncGenerator[str, None]:
-        user_msg = messages[-1]["content"] if messages else ""
-        guide = (
-            f"Hello! I received your message: **\"{user_msg}\"**\n\n"
-            "⚠️ **AI Provider Key Required**:\n"
-            "The backend is currently running without an `AI_API_KEY` configured in `backend/.env`.\n\n"
-            "### How to enable real AI responses:\n"
-            "1. Open `backend/.env` in your project workspace.\n"
-            "2. Add your API key: `AI_API_KEY=your_openai_or_groq_api_key`\n"
-            "3. Save the file and restart the backend!\n\n"
-            "*Note: For automated offline testing, set `AI_USE_MOCK=true` in `backend/.env`.*"
+        raise AIProviderNotConfiguredError(
+            "AI_PROVIDER_NOT_CONFIGURED: No AI provider is configured. Please set AI_API_KEY in backend/.env."
         )
-        for chunk in guide.split(" "):
-            yield chunk + " "
+        yield  # Make this an async generator
 

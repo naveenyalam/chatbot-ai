@@ -159,6 +159,10 @@ async def upload_document(
     db.commit()
     db.refresh(doc)
 
+    # Invalidate document list cache
+    from app.core.redis import cache_delete
+    cache_delete(f"nova:{settings.ENV_MODE}:user:{current_user.id}:documents_list")
+
     # 6. Trigger background extraction and vector indexing only if NOT an image
     if not is_image:
         from app.core.jobs import enqueue_job
@@ -182,11 +186,20 @@ def list_documents(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    from app.core.redis import cache_get, cache_set
+    cache_key = f"nova:{settings.ENV_MODE}:user:{current_user.id}:documents_list"
+    cached = cache_get(cache_key)
+    if cached:
+        try:
+            return json.loads(cached)
+        except Exception:
+            pass
+
     docs = db.query(Document).filter(
         Document.user_id == current_user.id
     ).order_by(Document.created_at.desc()).all()
 
-    return [
+    results = [
         {
             "id": d.id,
             "original_filename": d.original_filename,
@@ -194,10 +207,13 @@ def list_documents(
             "file_size": d.file_size,
             "status": d.status,
             "page_count": d.page_count,
-            "created_at": d.created_at
+            "created_at": d.created_at.isoformat() if d.created_at else None
         }
         for d in docs
     ]
+    cache_set(cache_key, json.dumps(results), ttl_seconds=settings.REDIS_CACHE_TTL)
+    return results
+
 
 
 @router.get("/{id}")
@@ -230,6 +246,15 @@ def get_document_status(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    from app.core.redis import cache_get, cache_set
+    cache_key = f"nova:{settings.ENV_MODE}:user:{current_user.id}:document_status:{id}"
+    cached = cache_get(cache_key)
+    if cached:
+        try:
+            return json.loads(cached)
+        except Exception:
+            pass
+
     doc = db.query(Document).filter(
         Document.id == id,
         Document.user_id == current_user.id
@@ -237,11 +262,13 @@ def get_document_status(
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found.")
 
-    return {
+    res = {
         "id": doc.id,
         "status": doc.status,
         "page_count": doc.page_count
     }
+    cache_set(cache_key, json.dumps(res), ttl_seconds=settings.REDIS_CACHE_TTL)
+    return res
 
 
 @router.delete("/{id}")
@@ -267,4 +294,10 @@ def delete_document(
     db.delete(doc)
     db.commit()
 
+    # Invalidate document caches
+    from app.core.redis import cache_delete
+    cache_delete(f"nova:{settings.ENV_MODE}:user:{current_user.id}:documents_list")
+    cache_delete(f"nova:{settings.ENV_MODE}:user:{current_user.id}:document_status:{id}")
+
     return {"status": "success", "message": "Document deleted."}
+

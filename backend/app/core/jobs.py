@@ -48,8 +48,12 @@ async def start_job_worker():
             
             if redis_client:
                 try:
-                    # BLPOP blocks until a job is added
-                    result = redis_client.blpop("nova:jobs:queue", timeout=1)
+                    # BLPOP blocks; run in executor to avoid blocking the main event loop
+                    loop = asyncio.get_running_loop()
+                    result = await loop.run_in_executor(
+                        None, 
+                        lambda: redis_client.blpop("nova:jobs:queue", timeout=1)
+                    )
                     if result:
                         _, val = result
                         job_data = json.loads(val)

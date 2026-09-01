@@ -1,0 +1,48 @@
+
+=====================================
+TEST 1: English
+=====================================
+The capital of India is New Delhi.
+
+=====================================
+TEST 2: Telugu
+=====================================
+భారతదేశం రాజధానిగా శండెం జిల్లా (భారత) మాధ్యమిక రాష్ట్రంలోను. ఇది భారతదేశంలో తాడానికి మొత్తంగా పెద్ద రాష్ట్రంగా వచ్చేందుకోవాలని రాజ్య ప్రాంతాలలో ఉపిర్తి లేదా ప్రాంతాల ఆధారంగా ఉపిర్తి చేస్తున్నది.
+
+=====================================
+TEST 3: Hindi
+=====================================
+भारत की राजधानी भोपाल है। हाल ही में, राजधानी को बंगाली राजधानी या बंगाल की राजधानी के रूप में भी जाना जाता है। लेकिन राजधानी नाम का वास्तविक अर्थ भारत की सरकार की राजनैंत्रियाँ और कार्यालयों की स्थापना के लिए चुनी गई विश्वसनीय निर्माण स्थान है। भोपाल और बंगाल की राजधानी नामों का अर्थ भारत की दक्षिणी भागों में सरकारी स्थानों की राजधानी है।
+
+=====================================
+TEST 4: Kannada
+=====================================
+ಭಾರತದ ರಾಜಧಾನಿ ಬೆಂಗಾಲೂರು (Bangalore) ಆಗ್ತು.
+
+=====================================
+TEST 5: Tamil
+=====================================
+இந்தியாவின் தலைநகரம் தமிழ்நாடு ஆகும், இது மாவரி மாவட்டத்தில் மாவரி நகரமாகும்.
+
+=====================================
+TEST 6: Mixed English + Telugu
+=====================================
+ఇండియా గురించి తెలుగులో చెప్పండి. ఈ బాటి ఇండియా రాష్ట్రం, తెలం జిల్లా మరియు తెలుగు భాష రెండో పట్టికలో వ్యక్తికారణ ప్రకారంగా ఉంది. తెలుగులో ఇండియా రాష్ట్రం నామినా ఉపయోగించబడ్డాయి.
+
+=====================================
+TEST 7: Conv switching Turn 1 (English)
+=====================================
+India is a country located in South Asia, bordered by Pakistan to the west, China, Nepal, and Bhutan to the north, and Myanmar and Bangladesh to the east. It shares maritime borders with Indonesia (through the Indonesian island of New Guinea closest to the Indonesian island of Papua), Malaysia, Singapore, Thailand, and Vietnam, lying between the Indian Ocean and the Arabian Sea. India is the seventh-largest country in terms of area and the second-most populous country in the world. 
+
+India is a federal parliamentary republic and is home to a diverse range of cultures and languages. Its official languages are Hindi and English, but many other languages are widely spoken, including Bengali, Telugu, Marathi, Tamil, Telugu, Kannada, Malayalam, and several others. 
+
+The country has a rich cultural heritage, with ancient traditions and a significant contribution to the world of art, philosophy, and literature. It is home to several ancient religions, including Hinduism, which is the largest religion in India, followed by Islam, Christianity, Sikhism, Buddhism, and Jainism.
+
+India's economy is diverse, with significant contributions from services, agriculture, and manufacturing. It is a member of the BRICS nations and the G20. India is also known for its vibrant IT industry, which has significantly contributed to the country's economic growth. 
+
+Geographically, India is divided into seven distinct regions: the northern mountains, the northern plains, the Deccan Plateau, the peninsula, the coastal regions, the deserts, and the islands. The country is also home to a variety of ecosystems, including tropical, subtropical, and alpine.
+
+=====================================
+TEST 7: Conv switching Turn 2 (Telugu)
+=====================================
+ఇమాం తెలుగులో చెప్పబడ్డాం. ఇంటి ప్రపంచం ఒక ప్రధాన దేశం అని అనేది తెలుగులో వెందించబడ్డు. ఇది ప్రధాన ప్రాంతం పై ప్రాంతాల మధ్య ప్రాంతం అని అనేది తెలుగులో వెందించబడుతుంది. ఇది ప్రధాన ప్రాంతం అని అని అని అనేది తెలుగులో వెందించబడుతుంది. ఇంటి ప్రపంచం ఒక ప్రధాన దేశం అని అనేది తెలుగులో వెందించబడుతుంది.

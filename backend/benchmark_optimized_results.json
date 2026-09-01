@@ -1,0 +1,101 @@
+[
+  {
+    "prompt": "Hi",
+    "conversation_id": "852f2435-dfe0-4c9b-b205-3404b96b4f45",
+    "ttft_sec": 20.34224009513855,
+    "total_time_sec": 20.68659734725952,
+    "char_len": 34,
+    "est_tokens": 8.5,
+    "tokens_per_second": 0.410894061372836,
+    "response": "Hello! How can I assist you today?",
+    "is_cold_start": true
+  },
+  {
+    "prompt": "What is the capital of India?",
+    "conversation_id": "d44806ae-a5e7-452f-bc8d-51ec86f19f26",
+    "ttft_sec": 1.6081879138946533,
+    "total_time_sec": 2.7105872631073,
+    "char_len": 34,
+    "est_tokens": 8.5,
+    "tokens_per_second": 3.1358518191574354,
+    "response": "The capital of India is New Delhi.",
+    "is_cold_start": false
+  },
+  {
+    "prompt": "Explain Python in 5 points.",
+    "conversation_id": "27e0d880-b519-4b7c-b975-501967544e0a",
+    "ttft_sec": 1.6797144412994385,
+    "total_time_sec": 21.178935050964355,
+    "char_len": 687,
+    "est_tokens": 171.75,
+    "tokens_per_second": 8.109472907240423,
+    "response": "Python is a high-level, interpreted programming language known for its readability and ease of use. Here are 5 key points about Python:\n\n1. **Interpreted Execution**: Python code is executed by an interpreter, making it easier to debug and test code snippets.\n2. **Versatile**: Python can be used for web development, data analysis, artificial intelligence, and more.\n3. **Readability**: It emphasizes code readability with the use of significant indentation.\n4. **Extensive Libraries**: Python has a vast ecosystem of libraries and frameworks, making it powerful for various applications.\n5. **Cross-Platform**: Python can run on multiple platforms, including Windows, macOS, and Linux.",
+    "is_cold_start": false
+  },
+  {
+    "prompt": "Explain IoT in simple terms.",
+    "conversation_id": "afe2508e-f37b-4a69-b120-7bf6049c29bb",
+    "ttft_sec": 1.9610416889190674,
+    "total_time_sec": 10.63015866279602,
+    "char_len": 316,
+    "est_tokens": 79.0,
+    "tokens_per_second": 7.431685876570055,
+    "response": "Internet of Things (IoT) refers to the network of physical devices, vehicles, home appliances, and other items embedded with sensors, software, and connectivity which enables these objects to connect and exchange data. Essentially, it allows everyday objects to be controlled and monitored remotely via the internet.",
+    "is_cold_start": false
+  },
+  {
+    "prompt": "తెలుగులో Python గురించి 5 పాయిंట్లు చెప్పండి.",
+    "conversation_id": "cf036936-788f-485b-bdd2-286c62e78d3f",
+    "ttft_sec": 3.5436010360717773,
+    "total_time_sec": 70.23230838775635,
+    "char_len": 322,
+    "est_tokens": 80.5,
+    "tokens_per_second": 1.1461961289319322,
+    "response": "కొన్ని పాయింట్లను తెలుగులో Python గురించి చెప్పండి అవైదండే:\n\n1. Python అంటేది ఒక ప్రోగ్రామింగ్ భాష.\n2. ఇది మొత్తం ప్రోగ్రామింగ్ సహాయంగా ఉపయోగించబడతాయి.\n3. ఇది మొత్తం ప్రోగ్రామ్ కార్డ్ లో సైనిక్ ప్రోగ్రామిండి.\n4. ఇది మొత్తం ప్రోగ్రామ్ కార్డ్ లో సైనిక్ ప్రోగ్రామిండి.\n5. ఇది మొత్తం ప్రోగ్రామ్ కార్డ్ లో సైనిక్ ప్రోగ్రామిండి.",
+    "is_cold_start": false
+  },
+  {
+    "prompt": "हिंदी में Python समझाइए।",
+    "conversation_id": "070bc3ef-f34e-4481-8e1d-9bcea2122afa",
+    "ttft_sec": 2.3217084407806396,
+    "total_time_sec": 87.68788862228394,
+    "char_len": 588,
+    "est_tokens": 147.0,
+    "tokens_per_second": 1.6764002681510934,
+    "response": "Python एक प्रोग्रामिंग भाषा है जिसे आप अपने कंप्यूटर पर विभिन्न कामों को सीखने, करने और बनाने के लिए उपयोग कर सकते हैं। यह एक खुला और सरल भाषा है जिसे आप अपने डेटा वर्कशॉप्पिंग, डिजिटल फाउndेशन्स, डेटा स्क्रीप्टिंग, और अन्य कामों में उपयोग कर सकते हैं।\n\nPython में एक नवीन शुरूआती अनुभवी नहीं होना चाहिए, क्योंकि यह एक खुली और सरल भाषा है। आप अपने डेटा को व्यक्षित करने, विश्लेषण करने और उसे उचित रूप से वितरित करने के लिए उपयोग कर सकते हैं।\n\nयदि आप इस भाषा को सीखना चाहते हैं, तो आप एक नई वेबसाइट या एक ऑनलाइन टीचर से शुरू कर सकते हैं। यह नई भाषा को सीखने के लिए एक खुला और सरल तरीका है।",
+    "is_cold_start": false
+  },
+  {
+    "prompt": "ಕನ್ನಡದಲ್ಲಿ IoT ಬಗ್ಗೆ ವಿವರಿಸಿ.",
+    "conversation_id": "049fcf04-1774-4f79-89ed-8b3606b1e359",
+    "ttft_sec": 2.7014451026916504,
+    "total_time_sec": 524.4823467731476,
+    "char_len": 2359,
+    "est_tokens": 589.75,
+    "tokens_per_second": 1.1244420400961224,
+    "response": " Karnataka sahitye IoT:\n\nIoT (आरआईटी) Karnataka sahitye Internet of Things ಎಂದು ಹೊಂದಿಸುತ್ತದೆ. ಇದು ಹಾಗೂ ಪ್ರದೇಶದ ಮತ್ತು ವಿದ್ಯಾಬಹುಲ ಪ್ರದೇಶದ ಸಂಪರ್ಕದ ಸಂಬಂಧಿಸುವ ಸ್ಥಾನಿಕ ಪ್ರದೇಶಗಳ ಸಂಪರ್ಕದ ಸ್ಥಾನವಾಗಿದೆ. \n\n1. ಮುಂದಿನ ಪ್ರದೇಶದ ಸಂಪರ್ಕ: ಮಂದ್ರಕಾರಿ ಕೆಲಸ, ಪ್ರದೇಶದ ಕೆಲಸ, ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ.\n2. ಪ್ರದೇಶದ ಸಂಪರ್ಕ: ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ.\n3. ಸಂಪರ್ಕದ ಸ್ಥಾನ: ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ.\n\nಈ ಪ್ರದೇಶಗಳ ಸಂಪರ್ಕದ ಸ್ಥಾನದಲ್ಲಿ ಹಾಗೂ ಸಂಪರ್ಕದ ಸ್ಥಾನದಲ್ಲಿ ಹಾಗೂ ಮುಂದಿನ ಸಂಪರ್ಕದ ಸ್ಥಾನದಲ್ಲಿ ಹಾಗೂ ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ್ತು ಮಂದ್ರಕಾರಿ ಕೆಲಸ ಮತ್ತು ಪ್ರದೇಶದ ಕೆಲಸ ಮತ",
+    "is_cold_start": false
+  },
+  {
+    "prompt": "தமிழில் AI பற்றி விளக்குங்கள்.",
+    "conversation_id": "24e2c04f-ccc9-4160-96b0-815158b8ba08",
+    "ttft_sec": 26.57982635498047,
+    "total_time_sec": 101.96946835517883,
+    "char_len": 457,
+    "est_tokens": 114.25,
+    "tokens_per_second": 1.1204334183840772,
+    "response": "AI (Artificial Intelligence) என்பது மாறிய நிலையான இயேலிய கணித நிலையான முறைகளை உருவாக்குவதற்கு உடனான நிலையான கார்நாடக பேராளனங்கள் தொடங்கிய ஒரு பயிரை. இது மின்னல் பயன்பாட்டு முறைகள், பொறுப்பு சார்ந்த விளையாட்டு முறைகள் மற்றும் விளையாட்டு நிலையான முறைகளை உருவாக்குவதற்கு உடனான நிலையான கார்நாடக பேராளனங்கள் தொடங்கிய ஒரு பயிரை. AI என்பது மின்னல் பயன்பாட்டு முறைகள் மற்றும் விளையாட்டு முறைகளை உருவாக்குவதற்கு உடனான நிலையான கார்நாடக பேராளனங்கள் தொடங்கிய ஒரு பயிரை.",
+    "is_cold_start": false
+  },
+  {
+    "prompt": "What is my name? (Multi-turn)",
+    "conversation_id": "a20d017d-1ad4-4804-8c4e-6e059d576f78",
+    "ttft_sec": 1.5630974769592285,
+    "total_time_sec": 2.4491703510284424,
+    "char_len": 18,
+    "est_tokens": 4.5,
+    "tokens_per_second": 1.8373568821418993,
+    "response": "Your name is John.",
+    "is_multi_turn": true
+  }
+]

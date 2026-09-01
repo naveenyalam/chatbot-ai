@@ -43,10 +43,13 @@ def test_resilience_sse_disconnect_handling():
     assert active_stream is False
 
 # 6. Usage Budget Hard Boundary Enforcement
-def test_resilience_budget_cap_enforcement():
+def test_resilience_budget_cap_enforcement(monkeypatch):
     test_user_id = "test_user_budget_cap"
     key = _get_local_key(test_user_id, "requests")
     _local_budgets[key] = settings.MAX_DAILY_AI_REQUESTS + 1
+    
+    # Force in-memory budget check path by mocking get_redis_client to return None
+    monkeypatch.setattr("app.core.budget.get_redis_client", lambda: None)
     
     with pytest.raises(HTTPException) as excinfo:
         UsageBudget.check_request_budget(test_user_id)

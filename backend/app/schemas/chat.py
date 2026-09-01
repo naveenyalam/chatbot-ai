@@ -31,7 +31,23 @@ class ChatRequest(BaseModel):
     document_ids: List[str] | None = Field(default=None, description="Optional document UUIDs to restrict RAG search")
     mode: str | None = Field(default=None, description="Selected execution mode (normal, web_search, deep_research, document_search, multimodal)")
     workspace_mode: str | None = Field(default=None, description="Selected workspace mode (general, research, writing, coding, documents, data-analysis, agent)")
+    attachments: List[dict] | None = Field(default=None, description="Optional attachment metadata or content payload")
+    response_style: str | None = Field(default=None, description="Optional response style (concise, balanced, detailed)")
+    response_tone: str | None = Field(default=None, description="Optional response tone (professional, friendly, technical)")
+    semantic_chunk_limit: int | None = Field(default=None, description="Optional semantic chunk limit")
+    similarity_filtering: bool | None = Field(default=None, description="Optional similarity filtering flag")
+    language: str | None = Field(default=None, description="Optional preferred language (auto, en, te, hi, kn, ta)")
 
+    @field_validator("workspace_mode", "mode")
+    @classmethod
+    def validate_workspace_mode_string(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return v
+        from app.models.workspace_mode import WorkspaceMode
+        normalized = WorkspaceMode.normalize(v)
+        if normalized is None:
+            raise ValueError(f"Invalid workspace mode '{v}'. Must be one of: {[m.value for m in WorkspaceMode]}")
+        return normalized.value
 
     @field_validator("messages")
     @classmethod

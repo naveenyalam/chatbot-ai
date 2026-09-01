@@ -1,5 +1,7 @@
 import time
 import logging
+import threading
+import uuid
 from typing import Dict, List
 from fastapi import Request, HTTPException, status
 from app.core.config import settings
@@ -10,6 +12,7 @@ logger = logging.getLogger("nova-ai.rate-limit")
 # Key format: "prefix:identifier"
 # Value: List of timestamps
 _rate_limit_store: Dict[str, List[float]] = {}
+_rate_limit_lock = threading.Lock()
 
 def check_rate_limit(key: str, limit: int, window: int) -> tuple[bool, int]:
     """
@@ -22,11 +25,13 @@ def check_rate_limit(key: str, limit: int, window: int) -> tuple[bool, int]:
         from app.core.redis import get_redis_client
         redis_client = get_redis_client()
         if redis_client:
-            redis_key = f"rate_limit:{key}"
+            redis_key = f"nova:{settings.ENV_MODE}:rate_limit:{key}"
+
             now = time.time()
             pipe = redis_client.pipeline()
-            # Add current request timestamp (using string representation of timestamp as member for uniqueness)
-            pipe.zadd(redis_key, {str(now): now})
+            # Add current request timestamp (using a unique member key per request to prevent collisions/bypass)
+            member = f"{now}:{uuid.uuid4().hex}"
+            pipe.zadd(redis_key, {member: now})
             # Remove timestamps older than window
             pipe.zremrangebyscore(redis_key, 0, now - window)
             # Count remaining timestamps
@@ -61,22 +66,23 @@ def check_rate_limit(key: str, limit: int, window: int) -> tuple[bool, int]:
             pass
 
 
-    # In-memory fallback
-    now = time.time()
-    history = _rate_limit_store.get(key, [])
-    
-    # Prune outdated timestamps
-    history = [t for t in history if now - t < window]
-    
-    if len(history) >= limit:
-        retry_after = window
-        if history:
-            retry_after = int(max(1.0, (history[0] + window) - now))
-        return False, retry_after
+    # In-memory fallback (thread-safe)
+    with _rate_limit_lock:
+        now = time.time()
+        history = _rate_limit_store.get(key, [])
         
-    history.append(now)
-    _rate_limit_store[key] = history
-    return True, 0
+        # Prune outdated timestamps
+        history = [t for t in history if now - t < window]
+        
+        if len(history) >= limit:
+            retry_after = window
+            if history:
+                retry_after = int(max(1.0, (history[0] + window) - now))
+            return False, retry_after
+            
+        history.append(now)
+        _rate_limit_store[key] = history
+        return True, 0
 
 class RateLimiter:
     """

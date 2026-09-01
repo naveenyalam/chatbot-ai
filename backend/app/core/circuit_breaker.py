@@ -121,4 +121,4 @@ class CircuitBreaker:
             if failures >= self.threshold or state == "HALF_OPEN":
                 logger.warning(f"CircuitBreaker [{self.provider_name}]: Trip threshold reached/probe failed. Opening circuit.")
                 redis_client.set(keys["state"], "OPEN")
-                redis_client.expire(keys["state"], self.cooldown)
+                redis_client.expire(keys["state"], self.cooldown * 2)

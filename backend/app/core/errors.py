@@ -21,9 +21,20 @@ class AIServiceError(NOVABaseError):
 class AIProviderNotConfiguredError(NOVABaseError):
     """Raised when no AI_API_KEY is configured."""
     def __init__(self, details: str = ""):
+        from app.core.config import settings
+        missing = []
+        if not settings.AI_API_KEY or any(p in settings.AI_API_KEY.lower() for p in ("mock", "dummy", "fake", "placeholder", "test", "local", "your_llm_api_key_here")):
+            missing.append("AI_API_KEY")
+        if not settings.AI_MODEL:
+            missing.append("AI_MODEL")
+        if not settings.AI_BASE_URL:
+            missing.append("AI_BASE_URL")
+            
+        missing_str = ", ".join(missing) if missing else "AI_API_KEY"
+        user_msg = f"REAL AI PROVIDER NOT CONFIGURED. Missing or placeholder environment variable(s): {missing_str}."
         super().__init__(
-            f"AI_PROVIDER_NOT_CONFIGURED: {details}",
-            user_message="⚠️ AI provider is not configured. Please configure an AI API key in backend/.env."
+            f"AI_PROVIDER_NOT_CONFIGURED: {details or user_msg}",
+            user_message=user_msg
         )
 
 class AIProviderAuthError(NOVABaseError):

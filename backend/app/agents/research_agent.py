@@ -108,8 +108,11 @@ class ResearchAgent(BaseAgent):
         state.step += 1
         yield {"type": "status", "value": "synthesizing", "query": "Compiling research report..."}
 
+        from app.services.workspace_prompts import get_multilingual_prompt
+        multilingual_prompt = get_multilingual_prompt(user_msg, state.language)
+
         synthesis_system = (
-            f"{NOVA_SYSTEM_PROMPT.strip()}\n\n"
+            f"{multilingual_prompt}\n\n{NOVA_SYSTEM_PROMPT.strip()}\n\n"
             "You are the NOVA Research Agent. Write a comprehensive, structured research report.\n"
             "Use markdown headers, bullets, and tables where appropriate.\n"
             "Cite sources with numbered brackets [1], [2], etc.\n\n"
@@ -118,5 +121,5 @@ class ResearchAgent(BaseAgent):
 
         payload = [{"role": "system", "content": synthesis_system}] + state.messages
 
-        async for chunk in model_router.stream(payload, purpose="reasoning", temperature=0.5):
+        async for chunk in model_router.stream(payload, purpose="reasoning", temperature=state.temperature):
             yield {"type": "text", "value": chunk}

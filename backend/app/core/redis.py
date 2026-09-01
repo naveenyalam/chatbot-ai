@@ -156,6 +156,31 @@ def cache_delete(key: str) -> bool:
         _emit_metric("delete", status)
 
 
+def cache_delete_pattern(pattern: str) -> bool:
+    """Deletes cache entries matching pattern from Redis and in-memory store."""
+    client = get_redis_client()
+    status = "success"
+    try:
+        if client:
+            keys = client.keys(pattern)
+            if keys:
+                client.delete(*keys)
+        # Local memory pattern clear
+        with _mem_lock:
+            prefix = pattern.replace("*", "")
+            to_delete = [k for k in _mem_cache if k.startswith(prefix)]
+            for k in to_delete:
+                _mem_cache.pop(k, None)
+        return True
+    except Exception as exc:
+        status = "error"
+        logger.error(f"cache_delete_pattern failed for pattern '{pattern}': {exc}")
+        return False
+    finally:
+        _emit_metric("delete_pattern", status)
+
+
+
 # ---------------------------------------------------------------------------
 # Internal metric helpers (soft-fail)
 # ---------------------------------------------------------------------------

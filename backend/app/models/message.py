@@ -17,13 +17,15 @@ class Message(Base):
     content = Column(Text, nullable=False)
     status = Column(String(50), nullable=False, default="complete")  # sending, streaming, complete, error
     # Index on created_at for chronological sorting
+    import datetime
     created_at = Column(
         DateTime, 
         nullable=False, 
+        default=datetime.datetime.utcnow,
         server_default=func.now(), 
         index=True
     )
-    updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow, server_default=func.now(), onupdate=datetime.datetime.utcnow)
 
     conversation = relationship("Conversation", back_populates="messages")
     sources = relationship("MessageSource", back_populates="message", cascade="all, delete-orphan", passive_deletes=True)

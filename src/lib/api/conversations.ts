@@ -144,5 +144,9 @@ export async function listMessages(conversationId: string, signal?: AbortSignal)
     throw new Error(err.message);
   }
 
-  return response.json();
+  const rawMessages = await response.json();
+  return rawMessages.map((m: any) => ({
+    ...m,
+    timestamp: m.timestamp || m.created_at || new Date().toISOString(),
+  }));
 }

@@ -323,6 +323,23 @@ export function SettingsPanel({
                             <option value="technical">Strictly Academic / Code Heavy</option>
                           </select>
                         </div>
+
+                        {/* AI Response Language */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-text-primary block">AI Response Language</label>
+                          <select
+                            value={settings.language || "auto"}
+                            onChange={(e) => updateSetting("language", e.target.value as any)}
+                            className="w-full bg-surface-secondary border border-border-subtle rounded-xl px-3 py-2 text-xs text-text-primary outline-none focus:border-accent font-medium"
+                          >
+                            <option value="auto">Auto Detect ({"Match User's Input"})</option>
+                            <option value="en">English</option>
+                            <option value="te">తెలుగు (Telugu)</option>
+                            <option value="hi">हिन्दी (Hindi)</option>
+                            <option value="kn">ಕನ್ನಡ (Kannada)</option>
+                            <option value="ta">தமிழ் (Tamil)</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   )}

@@ -133,7 +133,7 @@ def test_authentication_workflow():
         "email": "register@test.com",
         "password": "WrongPassword"
     })
-    assert login_response.status_code == 400
+    assert login_response.status_code == 401
     assert "Invalid email or password" in login_response.json()["detail"]
 
 
@@ -195,6 +195,10 @@ def test_rate_limiting_trigger():
     try:
         from app.core.rate_limit import _rate_limit_store
         _rate_limit_store.clear()
+        from app.core.redis import get_redis_client
+        client = get_redis_client()
+        if client:
+            client.delete("nova:development:rate_limit:test_rate:127.0.0.1")
         
         # We will make 3 requests in rapid succession for a limit of 2 requests/window
         from app.core.rate_limit import RateLimiter
@@ -295,6 +299,10 @@ def test_rate_limiter_retry_after_header():
     try:
         from app.core.rate_limit import _rate_limit_store, RateLimiter
         _rate_limit_store.clear()
+        from app.core.redis import get_redis_client
+        client = get_redis_client()
+        if client:
+            client.delete("nova:development:rate_limit:test_retry_after:127.0.0.1")
         
         limiter = RateLimiter(requests=1, window=60, key_prefix="test_retry_after")
         

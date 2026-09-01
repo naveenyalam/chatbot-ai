@@ -32,7 +32,7 @@ class ModelRouter:
             from app.services.llm_provider import MockLLMProvider
             logger.warning("ModelRouter: AI_USE_MOCK=true — using MockLLMProvider (tests only).")
             self._provider: BaseLLMProvider = MockLLMProvider()
-        elif settings.AI_API_KEY:
+        elif settings.ai_is_real:
             logger.info("ModelRouter: Using OpenAICompatibleProvider.")
             self._provider: BaseLLMProvider = OpenAICompatibleProvider(
                 api_key=settings.AI_API_KEY,
@@ -40,7 +40,7 @@ class ModelRouter:
             )
         else:
             logger.error(
-                "ModelRouter: No AI_API_KEY configured. "
+                "ModelRouter: No real AI_API_KEY configured. "
                 "Requests will fail until AI_API_KEY is set in backend/.env."
             )
             self._provider: BaseLLMProvider = NotConfiguredProvider()

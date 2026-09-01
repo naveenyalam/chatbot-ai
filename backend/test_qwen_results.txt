@@ -1,0 +1,28 @@
+
+=== Testing English ===
+Prompt: What is artificial intelligence?
+Response: Artificial Intelligence (AI) is a branch of computer science that focuses on creating machines that can perform tasks that traditionally require human intelligence. This includes the ability to perceive the world around them, understand and learn from the information they receive, and make decisions or solve problems based on that information. Some of the key subfields of AI include machine learning, natural language processing, computer vision, and robotics.
+
+AI can be classified into two main categories: narrow (or weak) AI and general (or strong) AI.
+
+1. Narrow AI, also known as weak AI, is designed to perform a specific task. It can be used in applications such as virtual personal assistants (like Siri or Alexa), recommendation systems, or image recognition software.
+
+2. General AI, also known as strong AI, is capable of thinking like a human being. It has the potential to understand language, solve complex problems, and make decisions on its own without being explicitly programmed.
+
+While current AI systems are highly advanced and can perform tasks that were once thought to be exclusive to humans, achieving general AI remains a significant challenge for researchers and technology developers.
+
+=== Testing Telugu ===
+Prompt: కృత్రిమ మేధస్సు అంటే ఏమిటి?
+Response: కృత్రిమ మేధస్సు అంటే కృత్రిమ పాట్టం.
+
+=== Testing Hindi ===
+Prompt: कृत्रिम बुद्धिमत्ता क्या है?
+Exception: timed out
+
+=== Testing Kannada ===
+Prompt: ಕೃತಕ ಬುದ್ಧಿಮತ್ತೆ ಎಂದರೇನು?
+Response: ದ್ವೇಶ ಕೃತಕವಾಸಿಗೆ ಪರಿಶಿತವಾದ ಬುದ್ಧಿತು ಆದರೆ ಅವರ ಇಲ್ಲದ ಮತ್ತು ತಿರಗೆ ಕರೆಯಾಗುತ್ತದೆ. ಅವರು ಅವರನೇ ಇಲ್ಲದ ಕುಟುಂಗಕ್ಕೆ ಹಾಕಿದ್ದರು. ಅವರು ಹತ್ತು ಅವರನೇ ಇಲ್ಲದ ಮತ್ತು ತಿರಗೆ ಮಾಡಿದಾಗ ಇಲ್ಲದ ಬೇಕಿತು ಆಗಿದೆ. ಆದಾರವೆ ಅವರ ಇಲ್ಲದ ಮತ್ತು ತಿರಗೆ ಕುಟುಂಗಗ್ರಾಮದಲ್ಲಿ ಹಾಕಿದ್ದರು.
+
+=== Testing Tamil ===
+Prompt: செயற்கை நுண்ணறிவு என்றால் என்ன?
+Response: "செயற்கை நுண்ணறிவு" என்பது நேசுப் பெண்களின் அல்லாத கருத்து வெளியேறு முன்னை எழுத்த முடிவாக செயற்கையை என்று அழைக்கப்படுகிறது. இது இலக்கு அடிப்படையாக நோய நகரம் என்ற சமயம் வெளியேறு.

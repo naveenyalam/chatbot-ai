@@ -34,7 +34,8 @@ async def retrieve_relevant_chunks(
     user_id: str,
     query: str,
     top_k: int = 5,
-    document_ids: Optional[List[str]] = None
+    document_ids: Optional[List[str]] = None,
+    similarity_filtering: bool = True
 ) -> List[Dict[str, Any]]:
     """
     Fetches top K semantically similar chunks for a query from documents belonging to user.
@@ -71,7 +72,8 @@ async def retrieve_relevant_chunks(
             for chunk in chunks:
                 sim = py_cosine_similarity(chunk.embedding, query_vector)
                 # Apply relevance filtering
-                if sim >= settings.RAG_MIN_RELEVANCE_SCORE:
+                min_score = settings.RAG_MIN_RELEVANCE_SCORE if similarity_filtering else -1.0
+                if sim >= min_score:
                     results.append({
                         "chunk_id": chunk.id,
                         "document_id": chunk.document_id,
@@ -95,7 +97,8 @@ async def retrieve_relevant_chunks(
                     continue
                 sim = py_cosine_similarity(chunk.embedding, query_vector)
                 # Apply relevance filtering
-                if sim >= settings.RAG_MIN_RELEVANCE_SCORE:
+                min_score = settings.RAG_MIN_RELEVANCE_SCORE if similarity_filtering else -1.0
+                if sim >= min_score:
                     scored.append((chunk, sim))
                 
             scored.sort(key=lambda x: x[1], reverse=True)

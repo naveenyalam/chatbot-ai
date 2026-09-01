@@ -16,7 +16,8 @@ else:
         pool_size=settings.DB_POOL_SIZE,
         max_overflow=settings.DB_MAX_OVERFLOW,
         pool_timeout=settings.DB_POOL_TIMEOUT,
-        pool_recycle=settings.DB_POOL_RECYCLE
+        pool_recycle=settings.DB_POOL_RECYCLE,
+        pool_pre_ping=True
     )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -30,3 +31,18 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def ensure_db_migrations():
+    """Safely apply schema additions (like workspace_mode column) to existing SQLite/DB tables."""
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE conversations ADD COLUMN workspace_mode VARCHAR(50) DEFAULT 'general'"))
+            conn.commit()
+    except Exception:
+        pass
+
+# Automatically run schema check on module load
+ensure_db_migrations()
+

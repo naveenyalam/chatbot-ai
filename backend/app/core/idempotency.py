@@ -2,8 +2,10 @@ import json
 import logging
 from fastapi import Request, Response
 from app.core.redis import get_redis_client
+from app.core.config import settings
 
 logger = logging.getLogger("nova-ai.idempotency")
+
 
 # Local memory cache for idempotency keys fallback
 _local_idempotency = {}
@@ -19,7 +21,7 @@ def check_idempotency(request: Request) -> Response | None:
     redis_client = get_redis_client()
     if redis_client:
         try:
-            cached = redis_client.get(f"nova:idempotency:{key}")
+            cached = redis_client.get(f"nova:{settings.ENV_MODE}:idempotency:{key}")
             if cached:
                 logger.info(f"Idempotency hit for key: {key}")
                 data = json.loads(cached)
@@ -61,7 +63,7 @@ def save_idempotency_response(request: Request, response_content: bytes, status_
     redis_client = get_redis_client()
     if redis_client:
         try:
-            redis_client.setex(f"nova:idempotency:{key}", 86400, json.dumps(data))  # TTL 24 hours
+            redis_client.setex(f"nova:{settings.ENV_MODE}:idempotency:{key}", 86400, json.dumps(data))  # TTL 24 hours
         except Exception as exc:
             logger.error(f"Failed to save Redis idempotency: {exc}")
     else:

@@ -32,6 +32,14 @@ class AgentState:
     step: int = 0
     tool_calls: int = 0
 
+    # Custom preferences
+    response_style: Optional[str] = None
+    response_tone: Optional[str] = None
+    semantic_chunk_limit: Optional[int] = None
+    similarity_filtering: Optional[bool] = None
+    language: Optional[str] = None
+    temperature: float = 0.7
+
     # Lifecycle
     status: str = "running"          # running | complete | failed | cancelled | timeout
     started_at: datetime = field(default_factory=datetime.utcnow)
