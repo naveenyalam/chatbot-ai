@@ -4,7 +4,7 @@
 
 > **Full-Stack AI Chatbot with Real-Time Streaming & AI Image Generation**
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-https%3A%2F%2Fchatbot--ai.vercel.app-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://chatbot-ai.vercel.app)
+[![Target Demo](https://img.shields.io/badge/🌐_Demo-Target_Deployment_URL-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://chatbot-ai.vercel.app)
 [![GitHub Repository](https://img.shields.io/badge/📦_GitHub_Repo-naveenyalam%2Fchatbot--ai-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/naveenyalam/chatbot-ai)
 
 <br/>
@@ -18,8 +18,35 @@
 
 </div>
 
+---
+
+## 🚀 Live Demo & Deployment Target
+
+- **Target Frontend URL**: [https://chatbot-ai.vercel.app](https://chatbot-ai.vercel.app)
+- **Target Backend API**: [https://nova-ai-backend.onrender.com](https://nova-ai-backend.onrender.com)
+- **Target Health Endpoint**: [https://nova-ai-backend.onrender.com/health](https://nova-ai-backend.onrender.com/health)
+
+> **Deployment Note**: NOVA AI is engineered as a production-oriented full-stack AI application featuring a Next.js 16 frontend, FastAPI backend, managed PostgreSQL, Upstash Redis infrastructure, real-time SSE streaming, and intent-driven AI image generation.
+
+### 🧪 Try These Prompts
+
+#### 💬 Text Chat & Technical Queries (Normal Text SSE Stream):
+```text
+Explain IoT in simple terms
+What is Python?
+How does image generation work?
+```
+
+#### 🎨 AI Image Generation Prompts (Triggers Intent Router & In-Chat Render):
+```text
+Generate a beautiful house with flowers, leaves and trees
+Create an image of a futuristic smart city at night
+Draw a robot working on a smart farm
+Generate a realistic drone monitoring farmland
+```
 
 ---
+
 
 ## 🌟 About NOVA AI
 
