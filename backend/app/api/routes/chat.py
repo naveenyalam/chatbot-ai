@@ -39,6 +39,9 @@ async def stream_chat(
     # Enforce user budget limits
     UsageBudget.check_request_budget(current_user.id)
 
+    import time
+    req_start_wall = time.time()
+
     # Read request ID from request state for full-stack alignment
     request_id = getattr(request.state, "request_id", None) or f"nova-{uuid.uuid4().hex[:12]}"
     logger.info(f"[{request_id}] stream_chat: user={current_user.id}, mode={chat_req.mode}")
@@ -46,6 +49,7 @@ async def stream_chat(
     conv_id = chat_req.conversation_id
 
     # 1. Verify access to existing conversation or create new one
+    t_db0 = time.time()
     if conv_id:
         conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
         if not conv or conv.user_id != current_user.id:
@@ -92,13 +96,12 @@ async def stream_chat(
             detail="Messages list cannot be empty."
         )
 
-
     # 3. Load recent history for context (up to 30 messages)
     db_messages = db.query(Message).filter(
         Message.conversation_id == conv.id
     ).order_by(Message.created_at.desc()).limit(30).all()
-    # Reverse to restore chronological order
     db_messages.reverse()
+    t_db_ms = (time.time() - t_db0) * 1000
 
     from app.core.context import truncate_context_messages, compress_old_messages
     ai_history = [
@@ -108,12 +111,18 @@ async def stream_chat(
     ai_history = compress_old_messages(ai_history, keep_full_count=4)
     ai_history = truncate_context_messages(ai_history, max_chars=settings.MAX_TOKENS_PER_REQUEST * 4)
 
+    logger.info(f"[PERF] request_id={request_id} db_ms={t_db_ms:.2f} pre_stream_ms={(time.time() - req_start_wall)*1000:.2f}")
+
     async def event_generator():
         import json
         text_tokens = []
         web_citations = []
+        first_token_time = None
 
         try:
+            # Immediate SSE comment flush to open HTTP connection headers instantly across proxies
+            yield ": ping\n\n"
+
             # Yield conversation ID first so frontend can bind state
             yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv.id})}\n\n"
 
@@ -164,6 +173,10 @@ async def stream_chat(
                         break
 
                     if event.get("type") == "text":
+                        if first_token_time is None:
+                            first_token_time = time.time()
+                            ft_ms = (first_token_time - req_start_wall) * 1000
+                            logger.info(f"[PERF] request_id={request_id} llm_first_token_ms={ft_ms:.2f}")
                         text_tokens.append(event["value"])
                     elif event.get("type") == "sources":
                         for citation in event.get("value", []):
@@ -174,8 +187,10 @@ async def stream_chat(
 
             # 4. Persist completed assistant message
             assistant_content = "".join(text_tokens)
+            total_req_ms = (time.time() - req_start_wall) * 1000
+            logger.info(f"[PERF] request_id={request_id} total_request_ms={total_req_ms:.2f} tokens_count={len(text_tokens)}")
+
             if assistant_content and not await request.is_disconnected():
-                # Record daily usage budget (estimate tokens as chars // 4)
                 UsageBudget.record_request(current_user.id, len(assistant_content) // 4)
                 try:
                     with SessionLocal() as db_new:
@@ -223,7 +238,6 @@ async def stream_chat(
             err_str = str(exc)
             logger.error(f"[{request_id}] Unhandled stream error: {exc}", exc_info=True)
 
-            # Surface AI provider configuration errors clearly to the frontend
             if "AI_PROVIDER_NOT_CONFIGURED" in err_str:
                 user_message = "AI provider is not configured. Add a valid AI API key in backend/.env and restart NOVA AI."
                 yield f"data: {json.dumps({'type': 'error', 'code': 'AI_PROVIDER_NOT_CONFIGURED', 'value': user_message})}\n\n"
@@ -232,4 +246,7 @@ async def stream_chat(
 
     response = StreamingResponse(event_generator(), media_type="text/event-stream")
     response.headers["X-Request-ID"] = request_id
+    response.headers["Cache-Control"] = "no-cache, no-transform"
+    response.headers["X-Accel-Buffering"] = "no"
+    response.headers["Connection"] = "keep-alive"
     return response

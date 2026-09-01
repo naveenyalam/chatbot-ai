@@ -61,6 +61,9 @@ export function streamChatResponse(
       const activeMode = (options.mode || "general").toLowerCase();
       const endpoint = `${API_URL}/api/workspaces/${encodeURIComponent(activeMode)}/chat`;
 
+      const t0 = typeof performance !== "undefined" ? performance.now() : Date.now();
+      let firstTokenLogged = false;
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -106,6 +109,14 @@ export function streamChatResponse(
       let done = false;
       let buffer = "";
       let fullText = "";
+
+      const logFirstToken = () => {
+        if (!firstTokenLogged) {
+          firstTokenLogged = true;
+          const elapsed = (typeof performance !== "undefined" ? performance.now() : Date.now()) - t0;
+          console.log(`[PERF] frontend_first_token_ms=${elapsed.toFixed(2)}`);
+        }
+      };
 
       while (!done) {
         const { value, done: readerDone } = await reader.read();
@@ -161,6 +172,7 @@ export function streamChatResponse(
                   fullText += markdownImg;
                   options.onChunk(fullText);
                 } else if (event.type === "text") {
+                  logFirstToken();
                   fullText += event.value as string;
                   options.onChunk(fullText);
                 } else if (event.type === "error") {
