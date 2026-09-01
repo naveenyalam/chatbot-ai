@@ -37,19 +37,21 @@ async def stream_chat(
     Every request receives a unique X-Request-ID header for traceability.
     """
     # Enforce user budget limits
-    UsageBudget.check_request_budget(current_user.id)
-
     import time
-    req_start_wall = time.time()
+    t_req_start = time.perf_counter()
 
-    # Read request ID from request state for full-stack alignment
+    # 1. Redis budget check timing
+    t_redis0 = time.perf_counter()
+    UsageBudget.check_request_budget(current_user.id)
+    t_redis_ms = (time.perf_counter() - t_redis0) * 1000
+
     request_id = getattr(request.state, "request_id", None) or f"nova-{uuid.uuid4().hex[:12]}"
     logger.info(f"[{request_id}] stream_chat: user={current_user.id}, mode={chat_req.mode}")
 
     conv_id = chat_req.conversation_id
 
-    # 1. Verify access to existing conversation or create new one
-    t_db0 = time.time()
+    # 2. Database conversation check timing
+    t_db0 = time.perf_counter()
     if conv_id:
         conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
         if not conv or conv.user_id != current_user.id:
@@ -78,46 +80,36 @@ async def stream_chat(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to initialize chat session."
             )
+    t_db_ms = (time.perf_counter() - t_db0) * 1000
 
-    # 2. Save/sync user message
-    if chat_req.messages:
-        from app.services.message_sync import sync_conversation_messages
-        try:
-            sync_conversation_messages(db, conv.id, chat_req.messages)
-        except Exception as exc:
-            logger.error(f"[{request_id}] Failed to sync user messages: {exc}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to synchronize conversation history."
-            )
-    else:
+    # 3. Fast In-Memory Context Construction (No redundant DB roundtrips)
+    if not chat_req.messages:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Messages list cannot be empty."
         )
 
-    # 3. Load recent history for context (up to 30 messages)
-    db_messages = db.query(Message).filter(
-        Message.conversation_id == conv.id
-    ).order_by(Message.created_at.desc()).limit(30).all()
-    db_messages.reverse()
-    t_db_ms = (time.time() - t_db0) * 1000
+    t_prompt0 = time.perf_counter()
+    raw_history = [{"role": m.role, "content": m.content} for m in chat_req.messages]
+    bounded_history = raw_history[-12:] if len(raw_history) > 12 else raw_history
 
     from app.core.context import truncate_context_messages, compress_old_messages
-    ai_history = [
-        {"role": m.role, "content": m.content}
-        for m in db_messages
-    ]
-    ai_history = compress_old_messages(ai_history, keep_full_count=4)
+    ai_history = compress_old_messages(bounded_history, keep_full_count=4)
     ai_history = truncate_context_messages(ai_history, max_chars=settings.MAX_TOKENS_PER_REQUEST * 4)
+    t_prompt_ms = (time.perf_counter() - t_prompt0) * 1000
 
-    logger.info(f"[PERF] request_id={request_id} db_ms={t_db_ms:.2f} pre_stream_ms={(time.time() - req_start_wall)*1000:.2f}")
+    t_pre_llm_ms = (time.perf_counter() - t_req_start) * 1000
+    logger.info(
+        f"[PERF] request_id={request_id} redis_ms={t_redis_ms:.2f} "
+        f"database_ms={t_db_ms:.2f} prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f}"
+    )
 
     async def event_generator():
         import json
         text_tokens = []
         web_citations = []
         first_token_time = None
+        t_sse_start = time.perf_counter()
 
         try:
             # Immediate SSE comment flush to open HTTP connection headers instantly across proxies
@@ -125,6 +117,9 @@ async def stream_chat(
 
             # Yield conversation ID first so frontend can bind state
             yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv.id})}\n\n"
+
+            t_sse_first_event_ms = (time.perf_counter() - t_req_start) * 1000
+            logger.info(f"[PERF] request_id={request_id} sse_first_event_ms={t_sse_first_event_ms:.2f}")
 
             # Check if user's prompt is requesting AI Image Generation
             last_prompt = chat_req.messages[-1].content if chat_req.messages else ""
@@ -174,8 +169,8 @@ async def stream_chat(
 
                     if event.get("type") == "text":
                         if first_token_time is None:
-                            first_token_time = time.time()
-                            ft_ms = (first_token_time - req_start_wall) * 1000
+                            first_token_time = time.perf_counter()
+                            ft_ms = (first_token_time - t_req_start) * 1000
                             logger.info(f"[PERF] request_id={request_id} llm_first_token_ms={ft_ms:.2f}")
                         text_tokens.append(event["value"])
                     elif event.get("type") == "sources":
@@ -185,10 +180,10 @@ async def stream_chat(
 
                     yield f"data: {json.dumps(event)}\n\n"
 
-            # 4. Persist completed assistant message
+            # 4. Persist user prompt & completed assistant message in single transaction post-stream
             assistant_content = "".join(text_tokens)
-            total_req_ms = (time.time() - req_start_wall) * 1000
-            logger.info(f"[PERF] request_id={request_id} total_request_ms={total_req_ms:.2f} tokens_count={len(text_tokens)}")
+            total_req_ms = (time.perf_counter() - t_req_start) * 1000
+            logger.info(f"[PERF] request_id={request_id} total_response_ms={total_req_ms:.2f} tokens_count={len(text_tokens)}")
 
             if assistant_content and not await request.is_disconnected():
                 UsageBudget.record_request(current_user.id, len(assistant_content) // 4)

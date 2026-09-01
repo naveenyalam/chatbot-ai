@@ -135,8 +135,7 @@ class AgentManager:
             )
             try:
                 db.add(db_run)
-                db.commit()
-                db.refresh(db_run)
+                db.flush()
                 state.db_run_id = db_run.id
             except Exception as db_err:
                 logger.error(f"Failed to persist AgentRun: {db_err}")

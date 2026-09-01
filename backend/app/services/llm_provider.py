@@ -23,19 +23,21 @@ class BaseLLMProvider(abc.ABC):
         """
         pass
 
+_shared_llm_client: Optional[httpx.AsyncClient] = None
+
+def get_shared_llm_client() -> httpx.AsyncClient:
+    global _shared_llm_client
+    if _shared_llm_client is None or _shared_llm_client.is_closed:
+        timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=15.0)
+        limits = httpx.Limits(max_keepalive_connections=30, max_connections=50, keepalive_expiry=120.0)
+        _shared_llm_client = httpx.AsyncClient(timeout=timeout, limits=limits)
+    return _shared_llm_client
+
 class OpenAICompatibleProvider(BaseLLMProvider):
     def __init__(self, api_key: str, base_url: str):
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.circuit_breaker = CircuitBreaker("openai")
-        self._client = None
-
-    async def _get_client(self) -> httpx.AsyncClient:
-        if self._client is None or self._client.is_closed:
-            timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=30.0)
-            limits = httpx.Limits(max_keepalive_connections=10, max_connections=20)
-            self._client = httpx.AsyncClient(timeout=timeout, limits=limits)
-        return self._client
 
     async def stream(
         self,
@@ -73,7 +75,7 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                 payload["keep_alive"] = -1
 
             url = f"{self.base_url}/chat/completions"
-            client = await self._get_client()
+            client = get_shared_llm_client()
             
             response = None
             success = False
