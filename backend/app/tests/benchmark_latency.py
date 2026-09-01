@@ -71,8 +71,8 @@ def run_benchmark():
             "name": "1. Simple Normal Chat",
             "endpoint": "/api/chat/stream",
             "payload": {
-                "messages": [{"role": "user", "content": "Hello!"}],
-                "model": settings.AI_MODEL,
+                "messages": [{"role": "user", "content": "Hello"}],
+                "model": settings.FAST_CHAT_MODEL,
                 "temperature": 0.7
             }
         },
@@ -81,21 +81,30 @@ def run_benchmark():
             "endpoint": "/api/chat/stream",
             "payload": {
                 "messages": [{"role": "user", "content": "What is Python?"}],
-                "model": settings.AI_MODEL,
+                "model": settings.FAST_CHAT_MODEL,
                 "temperature": 0.7
             }
         },
         {
-            "name": "3. Code Generation Query",
+            "name": "3. Simple Concept Explanation",
             "endpoint": "/api/chat/stream",
             "payload": {
-                "messages": [{"role": "user", "content": "Write a Python function to check if a string is a palindrome."}],
-                "model": settings.AI_MODEL,
+                "messages": [{"role": "user", "content": "Explain IoT in simple terms"}],
+                "model": settings.FAST_CHAT_MODEL,
+                "temperature": 0.7
+            }
+        },
+        {
+            "name": "4. Java Code Generation",
+            "endpoint": "/api/chat/stream",
+            "payload": {
+                "messages": [{"role": "user", "content": "Write a simple Java program"}],
+                "model": settings.FAST_CHAT_MODEL,
                 "temperature": 0.2
             }
         },
         {
-            "name": "4. Long Conversation (10 turns)",
+            "name": "5. Long Conversation (10 turns)",
             "endpoint": "/api/chat/stream",
             "payload": {
                 "messages": [
@@ -103,30 +112,30 @@ def run_benchmark():
                     else {"role": "assistant", "content": f"Tip {i}: Stay efficient."}
                     for i in range(10)
                 ] + [{"role": "user", "content": "Summarize all our tips."}],
-                "model": settings.AI_MODEL,
+                "model": settings.FAST_CHAT_MODEL,
                 "temperature": 0.7
             }
         },
         {
-            "name": "5. RAG / Document Context Query",
+            "name": "6. RAG / Document Context Query",
             "endpoint": "/api/chat/stream",
             "payload": {
                 "messages": [{"role": "user", "content": "What is the context of document 1?"}],
                 "document_ids": ["doc-1"],
-                "model": settings.AI_MODEL,
+                "model": settings.FAST_CHAT_MODEL,
                 "temperature": 0.3
             }
         },
         {
-            "name": "6. Image Generation Request",
+            "name": "7. Image Generation Request",
             "endpoint": "/api/chat/stream",
             "payload": {
                 "messages": [{"role": "user", "content": "Generate an image of a futuristic neon city"}],
-                "model": settings.AI_MODEL
+                "model": settings.FAST_CHAT_MODEL
             }
         },
         {
-            "name": "7. Workspace / Agent Query",
+            "name": "8. Workspace / Agent Query",
             "endpoint": "/api/workspaces/general/chat",
             "payload": {
                 "message": "Analyze persistent HTTP connection pools.",
@@ -142,14 +151,14 @@ def run_benchmark():
     summary_results = {}
 
     for idx, sc in enumerate(scenarios, start=1):
-        print(f"\nRunning Scenario ({idx}/7): {sc['name']}...")
+        print(f"\nRunning Scenario ({idx}/8): {sc['name']}...", flush=True)
         warm_llm_ttfts = []
         warm_first_event_times = []
         warm_total_times = []
         cold_llm_ttft = 0.0
 
-        # 1 COLD run + 10 WARM runs
-        total_runs = 11
+        # 1 COLD run + 2 WARM runs for fast validation
+        total_runs = 3
         for run in range(total_runs):
             is_cold = (run == 0)
             t0 = time.perf_counter()
@@ -189,7 +198,7 @@ def run_benchmark():
 
             if is_cold:
                 cold_llm_ttft = llm_token_ms
-                print(f"  [COLD Run] Conn: {sse_conn_ms:.1f}ms | 1st Evt: {first_evt_ms:.1f}ms | LLM TTFT: {llm_token_ms:.1f}ms | Total: {total_ms:.1f}ms")
+                print(f"  [COLD Run] Conn: {sse_conn_ms:.1f}ms | 1st Evt: {first_evt_ms:.1f}ms | LLM TTFT: {llm_token_ms:.1f}ms | Total: {total_ms:.1f}ms", flush=True)
             else:
                 warm_llm_ttfts.append(llm_token_ms)
                 warm_first_event_times.append(first_evt_ms)

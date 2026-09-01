@@ -28,7 +28,7 @@ _shared_llm_client: Optional[httpx.AsyncClient] = None
 def get_shared_llm_client() -> httpx.AsyncClient:
     global _shared_llm_client
     if _shared_llm_client is None or _shared_llm_client.is_closed:
-        timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=15.0)
+        timeout = httpx.Timeout(settings.LLM_TIMEOUT_SECONDS, connect=10.0)
         limits = httpx.Limits(max_keepalive_connections=50, max_connections=100, keepalive_expiry=300.0)
         try:
             _shared_llm_client = httpx.AsyncClient(timeout=timeout, limits=limits, http2=True)

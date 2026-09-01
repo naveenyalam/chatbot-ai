@@ -108,6 +108,7 @@ class Settings(BaseModel):
     # Provider & Reliability Settings (Phase 8.5)
     LLM_TIMEOUT_SECONDS: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "60.0"))
     LLM_MAX_RETRIES: int = int(os.getenv("LLM_MAX_RETRIES", "3"))
+    MAX_FIRST_TOKEN_LATENCY_SECONDS: float = float(os.getenv("MAX_FIRST_TOKEN_LATENCY_SECONDS", "10.0"))
     LLM_CIRCUIT_FAILURE_THRESHOLD: int = int(os.getenv("LLM_CIRCUIT_FAILURE_THRESHOLD", "5"))
     LLM_CIRCUIT_COOLDOWN_SECONDS: int = int(os.getenv("LLM_CIRCUIT_COOLDOWN_SECONDS", "30"))
     MAX_TOKENS_PER_REQUEST: int = int(os.getenv("MAX_TOKENS_PER_REQUEST", "4096"))

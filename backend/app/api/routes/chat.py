@@ -94,6 +94,7 @@ async def stream_chat(
         web_citations = []
         first_token_time = None
         t_sse_start = time.perf_counter()
+        sse_connection_ms = (t_sse_start - t_req_start) * 1000
 
         try:
             # Immediate SSE comment flush to open HTTP connection headers instantly across proxies
@@ -101,6 +102,9 @@ async def stream_chat(
 
             # Yield conversation ID first so frontend can bind state
             yield f"data: {json.dumps({'type': 'conversation_id', 'value': conv_id})}\n\n"
+
+            # Yield complete latency breakdown metadata for production observability
+            yield f"data: {json.dumps({'type': 'latency_breakdown', 'auth_ms': round(t_auth_ms, 2), 'redis_ms': round(t_redis_ms, 2), 'database_ms': round(t_db_ms, 2), 'context_ms': round(t_prompt_ms, 2), 'rag_ms': 0.0, 'planner_ms': 0.0, 'router_ms': 0.0, 'prompt_ms': round(t_prompt_ms, 2), 'pre_llm_ms': round(t_pre_llm_ms, 2), 'sse_connection_ms': round(sse_connection_ms, 2)})}\n\n"
 
             t_sse_first_event_ms = (time.perf_counter() - t_req_start) * 1000
             logger.info(f"[PERF] request_id={request_id} sse_first_event_ms={t_sse_first_event_ms:.2f}")
@@ -155,7 +159,17 @@ async def stream_chat(
                         if first_token_time is None:
                             first_token_time = time.perf_counter()
                             ft_ms = (first_token_time - t_req_start) * 1000
-                            logger.info(f"[PERF] request_id={request_id} llm_first_token_ms={ft_ms:.2f}")
+                            logger.info(
+                                f"[PERF] request_id={request_id} auth_ms={t_auth_ms:.2f} redis_ms={t_redis_ms:.2f} "
+                                f"database_ms={t_db_ms:.2f} context_ms={t_prompt_ms:.2f} rag_ms=0.00 planner_ms=0.00 "
+                                f"router_ms=0.00 prompt_ms={t_prompt_ms:.2f} pre_llm_ms={t_pre_llm_ms:.2f} "
+                                f"sse_connection_ms={sse_connection_ms:.2f} llm_first_token_ms={ft_ms:.2f}"
+                            )
+                            if ft_ms > settings.MAX_FIRST_TOKEN_LATENCY_SECONDS * 1000:
+                                logger.warning(
+                                    f"[LATENCY_GUARD_WARN] [{request_id}] LLM first token ({ft_ms:.2f}ms) "
+                                    f"exceeded threshold of {settings.MAX_FIRST_TOKEN_LATENCY_SECONDS}s!"
+                                )
                         text_tokens.append(event["value"])
                     elif event.get("type") == "sources":
                         for citation in event.get("value", []):

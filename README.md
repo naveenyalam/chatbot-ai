@@ -286,9 +286,9 @@ npx tsc --noEmit
 npm run lint
 npm run build
 
-# Backend Pytest Suite
+# Backend Pytest Suite & 10s Acceptance Test
 cd backend
-.\venv_new\Scripts\python.exe -m pytest app/tests/test_image_generation.py -v
+.\venv_new\Scripts\pytest.exe app/tests/test_10s_acceptance.py -v
 .\venv_new\Scripts\python.exe -m pytest app/tests/ -v
 ```
 
