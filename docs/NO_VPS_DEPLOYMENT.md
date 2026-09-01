@@ -75,6 +75,12 @@ http://localhost:8000 (FastAPI Local Backend)
 | `AI_BASE_URL` | Render | Provider endpoint (e.g., `https://api.openai.com/v1` or `https://openrouter.ai/api/v1`) |
 | `AI_MODEL` | Render | Cloud model identifier (e.g. `gpt-4o-mini`, `qwen/qwen-2.5-72b-instruct`) |
 | `CLOUD_LLM_API_KEY` / `AI_API_KEY` | Render | Cloud provider API key secret |
+| `IMAGE_GENERATION_ENABLED` | Render | `true` (global image AI toggle) |
+| `IMAGE_PROVIDER` | Render | `pollinations` / `openai` |
+| `IMAGE_MODEL` | Render | `flux` / `dall-e-3` |
+| `IMAGE_SIZE` | Render | `1024x1024` |
+| `IMAGE_GENERATION_RATE_LIMIT` | Render | `10` (max requests per minute) |
+| `IMAGE_GENERATION_MAX_PROMPT_LENGTH` | Render | `1000` (max prompt length) |
 | `JWT_SECRET` | Render | Secure 32+ character random string |
 | `SECURE_COOKIES` | Render | `true` |
 
@@ -86,3 +92,4 @@ http://localhost:8000 (FastAPI Local Backend)
 2. **Environment-Driven CORS**: CORS configuration reads `FRONTEND_URL` and rejects wildcard `*` when credentials are included in production mode.
 3. **Graceful Failures**: If the configured cloud LLM fails or credentials are missing in production, return an explicit error JSON/SSE payload instead of generating fake mock answers.
 4. **Preserved Local Dev**: Local development using Ollama + `qwen2.5:3b` remains completely intact and functional on `http://localhost:3000`.
+
