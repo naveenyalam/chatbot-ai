@@ -1,4 +1,8 @@
-# NOVA AI — AI Chatbot & Multi-Provider Image Generation Platform
+# 🚀 NOVA AI
+
+> Full-Stack AI Chatbot with Real-Time Streaming & AI Image Generation
+
+<div align="center">
 
 [![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)](https://github.com/naveenyalam/chatbot-ai)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -7,60 +11,105 @@
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-black)](https://vercel.com)
 [![Render](https://img.shields.io/badge/Deploy-Render-46E3B7)](https://render.com)
 
-**NOVA AI** is an enterprise-grade AI chatbot platform featuring real-time Server-Sent Events (SSE) chat streaming, intent-driven AI image generation, multimodal workspace tools, autonomous agent sandboxing, and high-performance search capabilities.
+[🚀 DEMO — TARGET DEPLOYMENT URL](https://chatbot-ai.vercel.app) &nbsp; | &nbsp; [📦 GitHub Repository](https://github.com/naveenyalam/chatbot-ai)
 
-- **GitHub Repository**: [https://github.com/naveenyalam/chatbot-ai](https://github.com/naveenyalam/chatbot-ai)
-
----
-
-## 1. Features & Capabilities
-
-- **Real-Time Streaming Chat**: Multilingual SSE streaming text interface powered by Cloud LLMs or local Ollama.
-- **Intent-Driven AI Image Generation**: Natural language prompt detection automatically routes visual queries to Pollinations AI or OpenAI DALL-E 3, rendering images directly inside the chat UI with hover controls, full-screen modal previews, and CORS-safe attachment downloads.
-- **Disambiguation Guardrails**: Prompt intent router ensures explanatory queries (e.g. *"How does image generation work?"*, *"Explain IoT"*, *"What is Python?"*) remain normal text responses.
-- **Workspace Modes**: Specialized agents for General Q&A, Research & Deep Search, Writing & Content Creation, Code Execution & Analysis, Document RAG, and Autonomous Tool Workflows.
-- **Serverless/Cloud Managed Deployment**: Fully decoupled from VPS requirements, running on Vercel (Frontend), Render (FastAPI Backend), Neon/Supabase (PostgreSQL), and Upstash (Redis).
+</div>
 
 ---
 
-## 2. Architecture Overview
+## 🌟 About NOVA AI
 
-### Managed Cloud Production Architecture (100% Serverless & Cloud-Managed)
-```
-User / Browser
-      │
-      ▼
-https://YOUR_APP.vercel.app / https://YOUR_DOMAIN.com (Vercel Next.js 16)
-      │
-      ▼ (HTTPS / SSE Streaming)
-FastAPI Backend on Render (https://YOUR_BACKEND.onrender.com)
-      ├── Managed PostgreSQL (Neon / Supabase / Render Postgres)
-      ├── Upstash Redis (Serverless TLS Cache & Rate Limiter)
-      ├── Cloud LLM Provider (OpenAI / OpenRouter / Groq / Together)
-      └── AI Image Provider (Pollinations AI / OpenAI DALL-E 3)
-```
+**NOVA AI** is a state-of-the-art, full-stack conversational AI platform built for speed, scalability, and visual intelligence. Featuring real-time Server-Sent Events (SSE) streaming chat, intent-driven AI image generation, multilingual support, secure JWT authentication, and multimodal workspace tools, NOVA AI is engineered for production deployment across serverless and cloud-managed infrastructure (Vercel, Render, Neon PostgreSQL, Upstash Redis).
 
-### Local Development Architecture (Independent Ollama Stack)
-```
-http://localhost:3000 (Next.js)
-      │
-      ▼
-http://localhost:8000 (FastAPI)
-      ├── SQLite (nova_ai.db)
-      ├── In-Memory Cache Fallback
-      └── Ollama (qwen2.5:3b)
+---
+
+## ✨ Key Features
+
+- 🤖 **AI Conversational Assistant**: High-speed streaming text responses powered by Cloud LLMs (OpenAI, OpenRouter, Groq, Together AI) or local Ollama.
+- 🎨 **AI Image Generation**: Multi-provider visual art generation powered by Pollinations AI (Flux) and OpenAI DALL-E 3.
+- ⚡ **Real-Time SSE Streaming**: Token-by-token streaming response and structured SSE image payload emission.
+- 🖼️ **In-Chat Image Rendering**: Direct visual rendering inside chat bubbles with loading skeletons and action toolbars.
+- 🔍 **Full-Screen Image Preview**: Interactive `ImageViewerModal` for high-resolution visual examination.
+- ⬇️ **CORS-Safe Download**: Server-side proxy endpoint (`/api/images/proxy-download`) for direct image file savings.
+- 🔐 **JWT & Secure Cookies**: Robust bearer token authentication with HTTP-only, SameSite-protected cookies in production.
+- 🌐 **Multilingual Support**: Real-time cross-language comprehension and text response capability.
+- 💾 **PostgreSQL Persistence**: Managed relational database persistence for users, sessions, conversations, and messages.
+- ⚡ **Redis Caching & Rate Limiting**: Distributed Upstash Redis caching with connection pool safety (`pool_pre_ping=True`) and local in-memory fallback.
+- ☁️ **Cloud & Local Workflows**: Cloud LLMs for production scale alongside local Ollama (`qwen2.5:3b`) for offline development.
+- 📱 **Modern Responsive UI**: Dark glassmorphic interface crafted with React 19, Next.js 16, and Tailwind CSS.
+
+---
+
+## 🎨 AI Image Generation
+
+NOVA AI automatically recognizes creative visual intent using a high-precision regex router (`detect_image_intent`), rendering generated artwork directly within the chat UI without redirecting users to external sites.
+
+### Example Prompts:
+- *"Generate a beautiful house with flowers, leaves and trees"*
+- *"Create an image of a futuristic smart city at night"*
+- *"Draw a robot working on a smart farm"*
+- *"Generate a realistic drone monitoring farmland"*
+
+### Disambiguation Guardrails:
+Explanatory or technical questions remain normal text responses:
+- *"Explain IoT in simple terms"*
+- *"What is Python?"*
+- *"How does image generation work?"*
+
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **Framework**: Next.js 16 (App Router, Turbopack)
+- **Library**: React 19, TypeScript
+- **Styling**: Tailwind CSS, Framer Motion, Lucide Icons
+
+### Backend
+- **Framework**: Python 3.12, FastAPI, Uvicorn
+- **ORM & Migrations**: SQLAlchemy 2.0, Alembic
+- **Validation & HTTP**: Pydantic v2, httpx
+
+### AI & Image Engines
+- **Cloud Text LLMs**: OpenAI (GPT-4o-mini), OpenRouter, Groq, Together AI
+- **Local Text LLM**: Ollama (`qwen2.5:3b`)
+- **Image Providers**: Pollinations AI (`flux`), OpenAI (`dall-e-3`)
+
+### Infrastructure & Storage
+- **Frontend Hosting**: Vercel Serverless
+- **Backend Hosting**: Render Managed Web Service
+- **Database**: Managed PostgreSQL (Neon / Supabase / Render)
+- **Cache**: Upstash Redis (TLS `rediss://`)
+
+### Security & Communication
+- **Auth**: JWT Bearer Tokens, HTTP-only Secure Cookies
+- **Streaming Protocol**: Server-Sent Events (SSE)
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    User([User / Browser]) --> Vercel[Vercel - Next.js 16 Frontend]
+    Vercel -->|HTTPS / SSE| Render[Render - FastAPI Backend]
+    
+    Render -->|SQLAlchemy| Postgres[(Neon / Supabase PostgreSQL)]
+    Render -->|TLS rediss://| Redis[(Upstash Redis Cache)]
+    Render -->|LLM API Router| LLM{Cloud LLM Router}
+    Render -->|Image API Router| ImageAI{Image AI Router}
+
+    LLM --> OpenAI[OpenAI API]
+    LLM --> OpenRouter[OpenRouter API]
+    LLM --> Groq[Groq API]
+    LLM --> Together[Together AI API]
+
+    ImageAI --> Pollinations[Pollinations AI Flux]
+    ImageAI --> DALLE[OpenAI DALL-E 3]
 ```
 
 ---
 
-## 3. Technology Stack
-
-- **Frontend**: React 19, Next.js 16 (App Router, Turbopack), Tailwind CSS, Lucide Icons, TypeScript.
-- **Backend**: Python 3.12, FastAPI, Asyncio, Pydantic v2, SQLAlchemy 2.0, Alembic, httpx.
-- **Database & Cache**: Managed PostgreSQL with connection pooling (`pool_pre_ping=True`), Upstash Redis.
-- **AI & ML**: OpenAI API, OpenRouter, Groq, Pollinations AI, Ollama (Local).
-
----
 
 ## 4. Local Setup Guide
 
