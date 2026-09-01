@@ -4,7 +4,7 @@
 
 > **Full-Stack AI Chatbot with Real-Time Streaming & AI Image Generation**
 
-[![Target Demo](https://img.shields.io/badge/🌐_Demo-Target_Deployment_URL-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://chatbot-ai.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Open_NOVA_AI-0070F3?style=for-the-badge&logo=vercel&logoColor=white)](https://nova-ai-chat-pi.vercel.app)
 [![GitHub Repository](https://img.shields.io/badge/📦_GitHub_Repo-naveenyalam%2Fchatbot--ai-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/naveenyalam/chatbot-ai)
 
 <br/>
@@ -20,13 +20,15 @@
 
 ---
 
-## 🚀 Deployment & Live App Setup
+## 🌐 Live Demo & Deployment Setup
 
-- **GitHub Repository**: [https://github.com/naveenyalam/chatbot-ai](https://github.com/naveenyalam/chatbot-ai)
-- **Target Frontend URL (Vercel)**: `https://<your-project-name>.vercel.app`
-- **Target Backend URL (Render)**: `https://<your-project-name>.onrender.com`
+- **🚀 Live Production App**: [https://nova-ai-chat-pi.vercel.app](https://nova-ai-chat-pi.vercel.app)
+- **📦 GitHub Repository**: [https://github.com/naveenyalam/chatbot-ai](https://github.com/naveenyalam/chatbot-ai)
+- **⚡ Backend API (Render)**: [https://nova-ai-backend.onrender.com](https://nova-ai-backend.onrender.com)
+- **🩺 Backend Health Check**: [https://nova-ai-backend.onrender.com/health](https://nova-ai-backend.onrender.com/health)
 
-> **Note on Live URL**: `chatbot-ai.vercel.app` is currently registered to a separate third-party Vercel project. When you import `https://github.com/naveenyalam/chatbot-ai` into your Vercel account, Vercel generates your own unique public production URL (e.g. `nova-ai-chat.vercel.app`).
+> **Verified Production URL**: The live application is deployed under Vercel project `nova-ai-chat` at **`https://nova-ai-chat-pi.vercel.app`**.
+
 
 
 ### 🧪 Try These Prompts

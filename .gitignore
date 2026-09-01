@@ -54,3 +54,6 @@ backend/storage/
 dump.rdb
 
 
+
+.vercel
+.env*

@@ -1,0 +1,10 @@
+OllamaSetup.exe
+*.db
+backend/
+docs/
+load_tests/
+monitoring/
+nginx/
+render.yaml
+node_modules/
+.next/
