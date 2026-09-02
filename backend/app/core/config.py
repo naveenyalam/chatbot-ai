@@ -28,7 +28,7 @@ class Settings(BaseModel):
     AI_MODEL: str = os.getenv("AI_MODEL", "qwen2.5:3b" if os.getenv("LLM_PROVIDER", "ollama").lower() == "ollama" else "gpt-4o-mini")
     AI_BASE_URL: str = os.getenv("AI_BASE_URL", "http://127.0.0.1:11434/v1" if os.getenv("LLM_PROVIDER", "ollama").lower() == "ollama" else "https://api.openai.com/v1")
     AI_USE_MOCK: bool = os.getenv("AI_USE_MOCK", "false").lower() == "true"
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000,http://localhost:3001")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://nova-ai-chat-pi.vercel.app,http://localhost:3000,http://localhost:3001")
 
     # Database and Authentication Settings
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./nova_ai.db")
@@ -170,7 +170,11 @@ class Settings(BaseModel):
     @property
     def cors_origins(self) -> List[str]:
         # Split CORS origins by comma and clean whitespace
-        return [url.strip() for url in self.FRONTEND_URL.split(",") if url.strip()]
+        origins = [url.strip() for url in self.FRONTEND_URL.split(",") if url.strip()]
+        default_prod = "https://nova-ai-chat-pi.vercel.app"
+        if default_prod not in origins:
+            origins.append(default_prod)
+        return origins
 
     @field_validator("AI_BASE_URL")
     @classmethod
