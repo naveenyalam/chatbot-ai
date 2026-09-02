@@ -26,3 +26,5 @@ services:
         generateValue: true
       - key: FRONTEND_URL
         value: https://nova-ai-chat-pi.vercel.app
+      - key: PYTHONPATH
+        value: backend
