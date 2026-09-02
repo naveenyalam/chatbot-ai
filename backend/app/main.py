@@ -28,24 +28,26 @@ async def lifespan(app: FastAPI):
     from app.db.database import ensure_db_migrations
     ensure_db_migrations()
     
-    # Initialize RedisService and check health
-    from app.services.redis_service import RedisService
-    RedisService.initialize()
-    try:
-        redis_connected = await asyncio.wait_for(RedisService.ping(), timeout=2.0)
-        if redis_connected:
-            logger.info("Redis connected successfully")
-        else:
-            logger.warning("Redis unavailable")
-    except Exception as e:
-        logger.warning(f"Redis ping check timed out or failed: {e}")
+    # Non-blocking background warmup for Redis and LLM pool
+    async def _async_startup_warmup():
+        from app.services.redis_service import RedisService
+        RedisService.initialize()
+        try:
+            redis_connected = await asyncio.wait_for(RedisService.ping(), timeout=2.0)
+            if redis_connected:
+                logger.info("Redis connected successfully")
+            else:
+                logger.warning("Redis unavailable")
+        except Exception as e:
+            logger.warning(f"Redis ping check timed out or failed: {e}")
 
-    # Warmup persistent LLM connection pool
-    from app.services.llm_provider import warmup_llm_client
-    try:
-        await asyncio.wait_for(warmup_llm_client(), timeout=3.0)
-    except Exception as e:
-        logger.warning(f"LLM client warmup timed out or failed: {e}")
+        from app.services.llm_provider import warmup_llm_client
+        try:
+            await asyncio.wait_for(warmup_llm_client(), timeout=3.0)
+        except Exception as e:
+            logger.warning(f"LLM client warmup timed out or failed: {e}")
+
+    asyncio.create_task(_async_startup_warmup())
 
     # Start background job worker
     from app.core.jobs import run_worker_in_background, stop_worker, register_job_handler
