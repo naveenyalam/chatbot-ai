@@ -51,14 +51,24 @@ class AIService:
             self.provider = NotConfiguredProvider()
             self._provider_name = "not_configured"
         elif settings.LLM_PROVIDER == "ollama":
-            ollama_url = settings.OLLAMA_BASE_URL or settings.AI_BASE_URL
-            ollama_key = settings.AI_API_KEY or "ollama"
-            logger.info(f"Initializing Ollama provider at {ollama_url} with model {settings.AI_MODEL}")
-            self.provider = OpenAICompatibleProvider(
-                api_key=ollama_key,
-                base_url=ollama_url
-            )
-            self._provider_name = "ollama"
+            api_key = settings.CLOUD_LLM_API_KEY or settings.AI_API_KEY
+            is_cloud = bool(api_key and api_key not in ("ollama", "local-mock-key") and ("openai" in settings.AI_BASE_URL or "openrouter" in settings.AI_BASE_URL or "groq" in settings.AI_BASE_URL or "together" in settings.AI_BASE_URL or not ("127.0.0.1" in settings.AI_BASE_URL or "localhost" in settings.AI_BASE_URL)))
+            if is_cloud:
+                logger.info(f"Initializing Cloud LLM Provider at {settings.AI_BASE_URL} with model {settings.AI_MODEL}")
+                self.provider = OpenAICompatibleProvider(
+                    api_key=api_key,
+                    base_url=settings.AI_BASE_URL
+                )
+                self._provider_name = "cloud"
+            else:
+                ollama_url = settings.OLLAMA_BASE_URL or settings.AI_BASE_URL
+                ollama_key = settings.AI_API_KEY or "ollama"
+                logger.info(f"Initializing Ollama provider at {ollama_url} with model {settings.AI_MODEL}")
+                self.provider = OpenAICompatibleProvider(
+                    api_key=ollama_key,
+                    base_url=ollama_url
+                )
+                self._provider_name = "ollama"
         else:
             api_key = settings.CLOUD_LLM_API_KEY or settings.AI_API_KEY
             logger.info(f"Initializing cloud LLM provider '{settings.LLM_PROVIDER}' at {settings.AI_BASE_URL}")
