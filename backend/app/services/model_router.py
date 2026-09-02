@@ -34,9 +34,10 @@ class ModelRouter:
             logger.warning("ModelRouter: AI_USE_MOCK=true — using MockLLMProvider (tests only).")
             self._provider: BaseLLMProvider = MockLLMProvider()
         elif settings.ai_is_real:
-            logger.info("ModelRouter: Using OpenAICompatibleProvider.")
+            api_key = settings.CLOUD_LLM_API_KEY or settings.AI_API_KEY
+            logger.info(f"ModelRouter: Using OpenAICompatibleProvider at {settings.AI_BASE_URL}.")
             self._provider: BaseLLMProvider = OpenAICompatibleProvider(
-                api_key=settings.AI_API_KEY,
+                api_key=api_key,
                 base_url=settings.AI_BASE_URL
             )
         else:
@@ -49,7 +50,12 @@ class ModelRouter:
     def get_model(self, purpose: str) -> str:
         """Return the model name for a given purpose."""
         resolver = _PURPOSE_MAP.get(purpose, _PURPOSE_MAP["default"])
-        return resolver()
+        model_name = resolver()
+        # Sanitize model name for cloud provider if Ollama format is configured in local defaults
+        if settings.ai_is_real and (":" in model_name or "qwen" in model_name.lower() or "ollama" in model_name.lower()):
+            if not ("127.0.0.1" in settings.AI_BASE_URL or "localhost" in settings.AI_BASE_URL):
+                model_name = "gpt-4o-mini"
+        return model_name
 
     async def stream(
         self,

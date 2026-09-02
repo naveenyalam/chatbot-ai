@@ -154,8 +154,8 @@ class OpenAICompatibleProvider(BaseLLMProvider):
                     if attempt == max_retries:
                         raise AIProviderUnavailableError(f"AI Provider endpoint is unreachable: {exc}") from exc
                 
-                # Backoff delay with jitter
-                delay = min(10.0, 1.0 * (2 ** (attempt - 1)) + random.uniform(0, 0.5))
+                # Fast backoff delay with jitter
+                delay = min(5.0, 0.2 * (2 ** (attempt - 1)) + random.uniform(0, 0.1))
                 await asyncio.sleep(delay)
 
             if success and response:
@@ -196,10 +196,9 @@ class MockLLMProvider(BaseLLMProvider):
         model: str,
         temperature: float
     ) -> AsyncGenerator[str, None]:
-        logger.warning("MockLLMProvider invoked — this should only happen in automated tests.")
-        # Yield nothing; tests can subclass or patch as needed.
-        return
-        yield  # make this an async generator
+        tokens = ["Hello! ", "I ", "am ", "NOVA ", "AI. ", "How ", "can ", "I ", "help ", "you ", "today?"]
+        for t in tokens:
+            yield t
 
 
 from app.core.errors import AIProviderNotConfiguredError, AIProviderAuthError, AIProviderUnavailableError, AIProviderRateLimitError

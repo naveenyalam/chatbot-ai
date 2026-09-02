@@ -90,7 +90,7 @@ class Settings(BaseModel):
     DB_POOL_RECYCLE: int = int(os.getenv("DB_POOL_RECYCLE", "1800"))
 
     # Redis Config
-    REDIS_TIMEOUT: float = float(os.getenv("REDIS_TIMEOUT", "2.0"))
+    REDIS_TIMEOUT: float = float(os.getenv("REDIS_TIMEOUT", "0.5"))
     REDIS_CACHE_TTL: int = int(os.getenv("REDIS_CACHE_TTL", "300"))
 
 
