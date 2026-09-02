@@ -94,6 +94,9 @@ class AIService:
         elif model_alias in ("nova-intelligence", "intelligence"):
             target_model = settings.AI_MODEL
 
+        if self._provider_name != "ollama" and (":" in target_model or "qwen" in target_model.lower() or "ollama" in target_model.lower()):
+            target_model = "gpt-4o-mini"
+
         # 2. Build the message payload with system prompt + conversation history
         payload_messages = [
             {"role": "system", "content": NOVA_SYSTEM_PROMPT.strip()}
