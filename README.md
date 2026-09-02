@@ -48,9 +48,13 @@ NOVA AI is engineered for instant user feedback and progressive token rendering:
 | **5. LLM First Text Token (`llm_first_token_ms`)** | `0.8 – 1.4 s` | Actual cloud LLM provider first token |
 | **6. Frontend First Token Render** | `< 10 ms post-LLM` | Immediate DOM paint of first token |
 
-Run the automated benchmark suite anytime:
+Run the automated local & production verification suites anytime:
 ```bash
+# Local latency benchmark across usage scenarios
 python backend/app/tests/benchmark_latency.py
+
+# Real production end-to-end TTFT verification (<10s goal)
+python backend/app/tests/test_production_e2e.py
 ```
 
 ---
