@@ -42,6 +42,10 @@ def ensure_db_migrations():
         return
     _migrations_applied = True
 
+    if not DATABASE_URL.startswith("sqlite"):
+        # PostgreSQL schema is managed via Alembic; avoid blocking startup connection inspect
+        return
+
     from sqlalchemy import inspect, text
     try:
         inspector = inspect(engine)

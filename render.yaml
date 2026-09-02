@@ -5,7 +5,7 @@ services:
     env: python
     region: singapore # Change to your preferred region (e.g. oregon, frankfurt)
     buildCommand: "pip install -r backend/requirements.txt"
-    startCommand: "cd backend && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    startCommand: "cd backend && python -c \"import subprocess, sys; subprocess.run(['alembic', 'upgrade', 'head'], timeout=10)\" || true && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     healthCheckPath: /health
     envVars:
       - key: ENV_MODE
@@ -25,4 +25,4 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        value: https://YOUR_DOMAIN.com
+        value: https://nova-ai-chat-pi.vercel.app
